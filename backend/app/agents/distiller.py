@@ -1,6 +1,9 @@
 """Distiller agent — handles 'summarize' and 'extract_artifact' jobs.
 
 Pipeline: transcript → LLM summary → LLM structured artifact → Artifact(s) in DB.
+
+All handlers use the passed-in `session` for DB access (single transaction),
+consistent with how the Worker invokes them.
 """
 
 import logging
@@ -9,7 +12,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.artifacts.schemas import ARTIFACT_SCHEMAS
-from app.db.session import async_session_factory
 from app.models.artifact import Artifact
 from app.models.job import Job
 from app.models.session import Session as SessionModel
@@ -80,7 +82,7 @@ async def handle_summarize_job(session: AsyncSession, job: Job):
     logger.info(f"Handling summarize job {job.id}")
     llm = get_llm()
 
-    transcript = await _get_transcript(job)
+    transcript = await _get_transcript(session, job)
     prompt = SUMMARIZE_PROMPT.format(transcript=transcript)
     llm_result = await llm.complete(prompt, schema=SUMMARIZE_SCHEMA)
 
@@ -96,10 +98,10 @@ async def handle_extract_artifact_job(session: AsyncSession, job: Job):
     logger.info(f"Handling extract_artifact job {job.id}")
     llm = get_llm()
 
-    transcript = await _get_transcript(job)
+    transcript = await _get_transcript(session, job)
 
     # Get summarize job output_payload for artifact type + title
-    summarize_payload = await _get_summarize_result(job.session_id)
+    summarize_payload = await _get_summarize_result(session, job.session_id)
     artifact_type = summarize_payload.get("artifact_type", "meeting_minutes")
     title = summarize_payload.get("title", "Untitled")
 
@@ -117,28 +119,25 @@ async def handle_extract_artifact_job(session: AsyncSession, job: Job):
     )
     content = await llm.complete(prompt, schema=json_schema)
 
-    # Create Artifact in DB
-    async with async_session_factory() as s:
-        artifact = Artifact(
-            session_id=job.session_id,
-            job_id=job.id,
-            artifact_type=artifact_type,
-            title=title,
-            content=content,
-            summary=summarize_payload.get("summary", ""),
-            status="pending_review",
-        )
-        s.add(artifact)
+    # Create Artifact using the passed-in session (single transaction)
+    artifact = Artifact(
+        session_id=job.session_id,
+        job_id=job.id,
+        artifact_type=artifact_type,
+        title=title,
+        content=content,
+        summary=summarize_payload.get("summary", ""),
+        status="pending_review",
+    )
+    session.add(artifact)
 
-        # Update session status
-        r = await s.execute(
-            select(SessionModel).where(SessionModel.id == job.session_id)
-        )
-        sess = r.scalar_one_or_none()
-        if sess:
-            sess.status = "needs_review"
-
-        await s.commit()
+    # Update session status
+    r = await session.execute(
+        select(SessionModel).where(SessionModel.id == job.session_id)
+    )
+    sess = r.scalar_one_or_none()
+    if sess:
+        sess.status = "needs_review"
 
     job.output_payload = {"artifact_type": artifact_type, "title": title}
     job.status = "completed"
@@ -146,33 +145,31 @@ async def handle_extract_artifact_job(session: AsyncSession, job: Job):
     logger.info(f"Extract artifact job {job.id} completed → {artifact_type}: {title}")
 
 
-async def _get_transcript(job: Job) -> str:
+async def _get_transcript(session: AsyncSession, job: Job) -> str:
     """Retrieve the transcript from the transcribe job's output_payload."""
-    async with async_session_factory() as s:
-        r = await s.execute(
-            select(Job).where(
-                Job.session_id == job.session_id,
-                Job.job_type == "transcribe",
-                Job.status == "completed",
-            )
+    r = await session.execute(
+        select(Job).where(
+            Job.session_id == job.session_id,
+            Job.job_type == "transcribe",
+            Job.status == "completed",
         )
-        transcribe_job = r.scalar_one_or_none()
-        if transcribe_job is None or transcribe_job.output_payload is None:
-            raise ValueError("No completed transcribe job found for this session")
-        return transcribe_job.output_payload.get("transcript", "")
+    )
+    transcribe_job = r.scalar_one_or_none()
+    if transcribe_job is None or transcribe_job.output_payload is None:
+        raise ValueError("No completed transcribe job found for this session")
+    return transcribe_job.output_payload.get("transcript", "")
 
 
-async def _get_summarize_result(session_id) -> dict:
+async def _get_summarize_result(session: AsyncSession, session_id) -> dict:
     """Retrieve the summarize job's output_payload."""
-    async with async_session_factory() as s:
-        r = await s.execute(
-            select(Job).where(
-                Job.session_id == session_id,
-                Job.job_type == "summarize",
-                Job.status == "completed",
-            )
+    r = await session.execute(
+        select(Job).where(
+            Job.session_id == session_id,
+            Job.job_type == "summarize",
+            Job.status == "completed",
         )
-        summarize_job = r.scalar_one_or_none()
-        if summarize_job is None or summarize_job.output_payload is None:
-            return {"artifact_type": "meeting_minutes", "title": "Untitled", "summary": ""}
-        return summarize_job.output_payload
+    )
+    summarize_job = r.scalar_one_or_none()
+    if summarize_job is None or summarize_job.output_payload is None:
+        return {"artifact_type": "meeting_minutes", "title": "Untitled", "summary": ""}
+    return summarize_job.output_payload

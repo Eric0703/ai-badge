@@ -5,28 +5,26 @@ Covers:
   - T6.2: Capture agent handler with mocked provider
   - T7.1: Summarize agent handler with mocked LLM
   - T7.2: Extract artifact handler with mocked LLM
+
+All DB access uses the `db` fixture (test database).  Agent handlers
+receive the same `db` session, so HTTP-created data and direct handler
+operations live in one database.
 """
 
-import asyncio
 import io
-import json
 import uuid
 
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 
 from app.agents.capture import handle_transcribe_job
 from app.agents.distiller import handle_summarize_job, handle_extract_artifact_job, set_llm
-from app.config import settings
-from app.db.session import async_session_factory
-from app.main import app
 from app.models.artifact import Artifact
 from app.models.job import Job
 from app.models.session import Session as SessionModel
 from app.orchestrator.service import create_jobs_for_session
 from app.providers.base import LLMProvider, TranscriptionProvider, TranscriptResult
-from sqlalchemy import select
 
 # ── Fixtures ──────────────────────────────────────────────────────────
 
@@ -49,14 +47,12 @@ async def auth_headers(async_client):
 @pytest_asyncio.fixture
 async def session_id(async_client, auth_headers):
     """Create a session with consent granted and audio uploaded."""
-    # Create session
     resp = await async_client.post("/api/v1/sessions", json={
         "title": "T6 Integration Test",
     }, headers=auth_headers)
     assert resp.status_code == 201, f"Create session failed: {resp.text}"
     sid = resp.json()["id"]
 
-    # Grant consent
     resp = await async_client.patch(
         f"/api/v1/sessions/{sid}/consent",
         json={"consent": True},
@@ -64,7 +60,6 @@ async def session_id(async_client, auth_headers):
     )
     assert resp.status_code == 200
 
-    # Transition to capturing
     resp = await async_client.patch(
         f"/api/v1/sessions/{sid}/status",
         json={"status": "capturing"},
@@ -72,7 +67,6 @@ async def session_id(async_client, auth_headers):
     )
     assert resp.status_code == 200
 
-    # Upload audio
     fake_audio = io.BytesIO(b"fake-opus-audio-data")
     resp = await async_client.post(
         f"/api/v1/sessions/{sid}/audio",
@@ -93,10 +87,9 @@ class TestT6FullPipeline:
 
     @pytest.mark.asyncio
     async def test_transition_to_processing_creates_jobs(
-        self, async_client, auth_headers, session_id
+        self, async_client, auth_headers, session_id, db
     ):
         """When session transitions to processing, 3 jobs should be created."""
-        # Transition to processing
         resp = await async_client.patch(
             f"/api/v1/sessions/{session_id}/status",
             json={"status": "processing"},
@@ -105,14 +98,12 @@ class TestT6FullPipeline:
         assert resp.status_code == 200
         assert resp.json()["status"] == "processing"
 
-        # Verify jobs exist
-        async with async_session_factory() as s:
-            r = await s.execute(
-                select(Job).where(
-                    Job.session_id == uuid.UUID(session_id)
-                ).order_by(Job.created_at)
-            )
-            jobs = r.scalars().all()
+        r = await db.execute(
+            select(Job).where(
+                Job.session_id == uuid.UUID(session_id)
+            ).order_by(Job.created_at)
+        )
+        jobs = r.scalars().all()
 
         job_types = [j.job_type for j in jobs]
         assert "transcribe" in job_types, f"Expected transcribe job, got {job_types}"
@@ -127,14 +118,12 @@ class TestT6FullPipeline:
         self, async_client, auth_headers
     ):
         """Transitioning to processing without audio should return 400."""
-        # Create session without audio
         resp = await async_client.post("/api/v1/sessions", json={
             "title": "No Audio Test",
         }, headers=auth_headers)
         assert resp.status_code == 201
         sid = resp.json()["id"]
 
-        # Grant consent
         resp = await async_client.patch(
             f"/api/v1/sessions/{sid}/consent",
             json={"consent": True},
@@ -142,7 +131,6 @@ class TestT6FullPipeline:
         )
         assert resp.status_code == 200
 
-        # Try to go straight to processing (skip capturing/upload)
         resp = await async_client.patch(
             f"/api/v1/sessions/{sid}/status",
             json={"status": "capturing"},
@@ -180,9 +168,8 @@ class TestT6CaptureAgent:
     """Test the transcribe job handler."""
 
     @pytest.mark.asyncio
-    async def test_handle_transcribe_job(self, async_client, auth_headers, session_id):
+    async def test_handle_transcribe_job(self, async_client, auth_headers, session_id, db):
         """Worker handler should transcribe and update job status to completed."""
-        # Transition to processing to create jobs
         resp = await async_client.patch(
             f"/api/v1/sessions/{session_id}/status",
             json={"status": "processing"},
@@ -190,74 +177,58 @@ class TestT6CaptureAgent:
         )
         assert resp.status_code == 200
 
-        # Get the transcribe job
-        async with async_session_factory() as s:
-            r = await s.execute(
-                select(Job).where(
-                    Job.session_id == uuid.UUID(session_id),
-                    Job.job_type == "transcribe",
-                )
+        r = await db.execute(
+            select(Job).where(
+                Job.session_id == uuid.UUID(session_id),
+                Job.job_type == "transcribe",
             )
-            job = r.scalar_one()
+        )
+        job = r.scalar_one()
 
-        # Actually, we need to mock the provider first.
-        # Import and monkey-patch the capture module's transcriber.
         import app.capture.service as cap_service
         original = cap_service.get_transcriber()
         cap_service.set_transcriber(MockTranscriber())
 
         try:
-            async with async_session_factory() as s:
-                await handle_transcribe_job(s, job)
-                await s.commit()
+            await handle_transcribe_job(db, job)
+            await db.commit()
 
-                # Verify job completed
-                r = await s.execute(select(Job).where(Job.id == job.id))
-                updated = r.scalar_one()
-                assert updated.status == "completed"
-                assert updated.output_payload is not None
-                assert "transcript" in updated.output_payload
-                assert updated.output_payload["transcript"] == "This is a test transcript from the mock provider."
-                assert len(updated.output_payload["segments"]) == 2
-                assert updated.output_payload["language"] == "en"
+            r = await db.execute(select(Job).where(Job.id == job.id))
+            updated = r.scalar_one()
+            assert updated.status == "completed"
+            assert updated.output_payload is not None
+            assert "transcript" in updated.output_payload
+            assert updated.output_payload["transcript"] == "This is a test transcript from the mock provider."
+            assert len(updated.output_payload["segments"]) == 2
+            assert updated.output_payload["language"] == "en"
         finally:
             cap_service.set_transcriber(original)
 
     @pytest.mark.asyncio
-    async def test_transcribe_job_fails_without_audio(self, async_client, auth_headers):
+    async def test_transcribe_job_fails_without_audio(self, async_client, auth_headers, db):
         """Transcribe job should raise error if session has no audio_key."""
-        # Create session without audio
         resp = await async_client.post("/api/v1/sessions", json={
             "title": "No Audio For Transcribe",
         }, headers=auth_headers)
         assert resp.status_code == 201
         sid = resp.json()["id"]
-
-        # Manually create a transcribe job (bypass normal flow)
         sid_uuid = uuid.UUID(sid)
-        async with async_session_factory() as s:
-            from app.orchestrator.service import create_jobs_for_session
-            # Force-create via orchestrator but session has no audio_key
-            import app.capture.service as cap_service
-            cap_service.set_transcriber(MockTranscriber())
 
-            try:
-                # Create session first with audio_key=None
-                r = await s.execute(select(SessionModel).where(SessionModel.id == sid_uuid))
-                sess = r.scalar_one()
-                sess.status = "processing"
-                await s.commit()
+        import app.capture.service as cap_service
+        cap_service.set_transcriber(MockTranscriber())
 
-                # Create jobs (orchestrator won't check for audio)
-                jobs = await create_jobs_for_session(s, sid_uuid)
-                await s.commit()
-                transcribe_job = [j for j in jobs if j.job_type == "transcribe"][0]
+        # Session has audio_key=None; move it to processing and create jobs
+        r = await db.execute(select(SessionModel).where(SessionModel.id == sid_uuid))
+        sess = r.scalar_one()
+        sess.status = "processing"
+        await db.commit()
 
-                # Should raise ValueError
-                with pytest.raises(ValueError, match="has no audio_key"):
-                    await handle_transcribe_job(s, transcribe_job)
-            finally:
-                cap_service.set_transcriber(MockTranscriber())
+        jobs = await create_jobs_for_session(db, sid_uuid)
+        await db.commit()
+        transcribe_job = [j for j in jobs if j.job_type == "transcribe"][0]
+
+        with pytest.raises(ValueError, match="has no audio_key"):
+            await handle_transcribe_job(db, transcribe_job)
 
 
 # ── T7.1: Distiller Summarize Agent ────────────────────────────────────
@@ -291,9 +262,8 @@ class TestT7DistillerAgent:
     """Test the summarize and extract_artifact job handlers."""
 
     @pytest.mark.asyncio
-    async def test_handle_summarize_job(self, async_client, auth_headers, session_id):
+    async def test_handle_summarize_job(self, async_client, auth_headers, session_id, db):
         """Worker handler should call LLM and store summary + artifact_type."""
-        # Transition to processing to create jobs
         resp = await async_client.patch(
             f"/api/v1/sessions/{session_id}/status",
             json={"status": "processing"},
@@ -303,55 +273,50 @@ class TestT7DistillerAgent:
 
         sid_uuid = uuid.UUID(session_id)
 
-        # First, complete the transcribe job with mock transcript
-        async with async_session_factory() as s:
-            r = await s.execute(
-                select(Job).where(
-                    Job.session_id == sid_uuid,
-                    Job.job_type == "transcribe",
-                )
+        # Complete the transcribe job with a mock transcript
+        r = await db.execute(
+            select(Job).where(
+                Job.session_id == sid_uuid,
+                Job.job_type == "transcribe",
             )
-            transcribe_job = r.scalar_one()
-            transcribe_job.status = "completed"
-            transcribe_job.output_payload = {
-                "transcript": "Alice: We need to ship the feature. Bob: Agreed, by Friday. Alice: I'll update the docs.",
-                "segments": [],
-                "language": "en",
-            }
-            await s.commit()
+        )
+        transcribe_job = r.scalar_one()
+        transcribe_job.status = "completed"
+        transcribe_job.output_payload = {
+            "transcript": "Alice: We need to ship the feature. Bob: Agreed, by Friday. Alice: I'll update the docs.",
+            "segments": [],
+            "language": "en",
+        }
+        await db.commit()
 
-        # Now test summarize
         mock_llm = MockLLM()
         set_llm(mock_llm)
 
         try:
-            async with async_session_factory() as s:
-                r = await s.execute(
-                    select(Job).where(
-                        Job.session_id == sid_uuid,
-                        Job.job_type == "summarize",
-                    )
+            r = await db.execute(
+                select(Job).where(
+                    Job.session_id == sid_uuid,
+                    Job.job_type == "summarize",
                 )
-                summarize_job = r.scalar_one()
+            )
+            summarize_job = r.scalar_one()
 
-                await handle_summarize_job(s, summarize_job)
-                await s.commit()
+            await handle_summarize_job(db, summarize_job)
+            await db.commit()
 
-                # Verify
-                r = await s.execute(select(Job).where(Job.id == summarize_job.id))
-                updated = r.scalar_one()
-                assert updated.status == "completed"
-                assert updated.output_payload["summary"] == "Test summary of the meeting transcript."
-                assert updated.output_payload["artifact_type"] == "meeting_minutes"
-                assert updated.output_payload["title"] == "Weekly Standup 2026-06-11"
-                assert "transcript" in mock_llm.last_prompt
+            r = await db.execute(select(Job).where(Job.id == summarize_job.id))
+            updated = r.scalar_one()
+            assert updated.status == "completed"
+            assert updated.output_payload["summary"] == "Test summary of the meeting transcript."
+            assert updated.output_payload["artifact_type"] == "meeting_minutes"
+            assert updated.output_payload["title"] == "Weekly Standup 2026-06-11"
+            assert "transcript" in mock_llm.last_prompt
         finally:
             set_llm(None)
 
     @pytest.mark.asyncio
-    async def test_handle_extract_artifact_job(self, async_client, auth_headers, session_id):
+    async def test_handle_extract_artifact_job(self, async_client, auth_headers, session_id, db):
         """Worker handler should create Artifact row in DB."""
-        # Setup: complete transcribe + summarize jobs
         resp = await async_client.patch(
             f"/api/v1/sessions/{session_id}/status",
             json={"status": "processing"},
@@ -361,33 +326,31 @@ class TestT7DistillerAgent:
 
         sid_uuid = uuid.UUID(session_id)
 
-        async with async_session_factory() as s:
-            # Complete transcribe
-            r = await s.execute(select(Job).where(
-                Job.session_id == sid_uuid, Job.job_type == "transcribe"
-            ))
-            tj = r.scalar_one()
-            tj.status = "completed"
-            tj.output_payload = {
-                "transcript": "Standup: decided to ship on Friday. Alice will update docs.",
-                "segments": [],
-                "language": "en",
-            }
+        # Complete transcribe
+        r = await db.execute(select(Job).where(
+            Job.session_id == sid_uuid, Job.job_type == "transcribe"
+        ))
+        tj = r.scalar_one()
+        tj.status = "completed"
+        tj.output_payload = {
+            "transcript": "Standup: decided to ship on Friday. Alice will update docs.",
+            "segments": [],
+            "language": "en",
+        }
 
-            # Complete summarize
-            r = await s.execute(select(Job).where(
-                Job.session_id == sid_uuid, Job.job_type == "summarize"
-            ))
-            sj = r.scalar_one()
-            sj.status = "completed"
-            sj.output_payload = {
-                "summary": "Team decided to ship on Friday.",
-                "artifact_type": "meeting_minutes",
-                "title": "Shipping Decision",
-            }
-            await s.commit()
+        # Complete summarize
+        r = await db.execute(select(Job).where(
+            Job.session_id == sid_uuid, Job.job_type == "summarize"
+        ))
+        sj = r.scalar_one()
+        sj.status = "completed"
+        sj.output_payload = {
+            "summary": "Team decided to ship on Friday.",
+            "artifact_type": "meeting_minutes",
+            "title": "Shipping Decision",
+        }
+        await db.commit()
 
-        # Mock LLM for extract
         extract_response = {
             "title": "Shipping Decision",
             "date": "2026-06-11",
@@ -401,44 +364,40 @@ class TestT7DistillerAgent:
         set_llm(mock_llm)
 
         try:
-            async with async_session_factory() as s:
-                r = await s.execute(select(Job).where(
-                    Job.session_id == sid_uuid, Job.job_type == "extract_artifact"
-                ))
-                ej = r.scalar_one()
+            r = await db.execute(select(Job).where(
+                Job.session_id == sid_uuid, Job.job_type == "extract_artifact"
+            ))
+            ej = r.scalar_one()
 
-                await handle_extract_artifact_job(s, ej)
-                await s.commit()
+            await handle_extract_artifact_job(db, ej)
+            await db.commit()
 
-                # Verify job completed
-                r = await s.execute(select(Job).where(Job.id == ej.id))
-                updated = r.scalar_one()
-                assert updated.status == "completed"
-                assert updated.output_payload["artifact_type"] == "meeting_minutes"
+            r = await db.execute(select(Job).where(Job.id == ej.id))
+            updated = r.scalar_one()
+            assert updated.status == "completed"
+            assert updated.output_payload["artifact_type"] == "meeting_minutes"
 
-                # Verify Artifact created in DB
-                r = await s.execute(select(Artifact).where(
-                    Artifact.session_id == sid_uuid
-                ))
-                artifacts = r.scalars().all()
-                assert len(artifacts) == 1
-                artifact = artifacts[0]
-                assert artifact.artifact_type == "meeting_minutes"
-                assert artifact.title == "Shipping Decision"
-                assert artifact.status == "pending_review"
-                assert artifact.content == extract_response
+            r = await db.execute(select(Artifact).where(
+                Artifact.session_id == sid_uuid
+            ))
+            artifacts = r.scalars().all()
+            assert len(artifacts) == 1
+            artifact = artifacts[0]
+            assert artifact.artifact_type == "meeting_minutes"
+            assert artifact.title == "Shipping Decision"
+            assert artifact.status == "pending_review"
+            assert artifact.content == extract_response
 
-                # Verify session status updated
-                r = await s.execute(select(SessionModel).where(
-                    SessionModel.id == sid_uuid
-                ))
-                sess = r.scalar_one()
-                assert sess.status == "needs_review"
+            r = await db.execute(select(SessionModel).where(
+                SessionModel.id == sid_uuid
+            ))
+            sess = r.scalar_one()
+            assert sess.status == "needs_review"
         finally:
             set_llm(None)
 
     @pytest.mark.asyncio
-    async def test_summarize_without_transcribe_fails(self, async_client, auth_headers, session_id):
+    async def test_summarize_without_transcribe_fails(self, async_client, auth_headers, session_id, db):
         """Summarize should fail if transcribe job is not completed."""
         resp = await async_client.patch(
             f"/api/v1/sessions/{session_id}/status",
@@ -452,13 +411,12 @@ class TestT7DistillerAgent:
         set_llm(mock_llm)
 
         try:
-            async with async_session_factory() as s:
-                r = await s.execute(select(Job).where(
-                    Job.session_id == sid_uuid, Job.job_type == "summarize"
-                ))
-                sj = r.scalar_one()
+            r = await db.execute(select(Job).where(
+                Job.session_id == sid_uuid, Job.job_type == "summarize"
+            ))
+            sj = r.scalar_one()
 
-                with pytest.raises(ValueError, match="No completed transcribe job"):
-                    await handle_summarize_job(s, sj)
+            with pytest.raises(ValueError, match="No completed transcribe job"):
+                await handle_summarize_job(db, sj)
         finally:
             set_llm(None)

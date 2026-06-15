@@ -6,7 +6,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.capture.service import transcribe_audio
-from app.db.session import async_session_factory
 from app.models.job import Job
 from app.models.session import Session as SessionModel
 from app.orchestrator.worker import register_handler
@@ -20,6 +19,9 @@ async def handle_transcribe_job(session: AsyncSession, job: Job):
 
     Reads the session's audio_key, transcribes via Whisper,
     and stores the TranscriptResult in job.output_payload.
+
+    Uses the passed-in `session` for all DB access (single transaction),
+    consistent with how the Worker invokes handlers.
     """
     logger.info(f"Handling transcribe job {job.id}")
 
@@ -27,16 +29,15 @@ async def handle_transcribe_job(session: AsyncSession, job: Job):
     if session_id is None:
         raise ValueError("transcribe job has no session_id")
 
-    async with async_session_factory() as s:
-        r = await s.execute(
-            select(SessionModel).where(SessionModel.id == session_id)
-        )
-        session_obj = r.scalar_one_or_none()
-        if session_obj is None:
-            raise ValueError(f"Session {session_id} not found")
-        if session_obj.audio_key is None:
-            raise ValueError(f"Session {session_id} has no audio_key")
-        audio_key = session_obj.audio_key
+    r = await session.execute(
+        select(SessionModel).where(SessionModel.id == session_id)
+    )
+    session_obj = r.scalar_one_or_none()
+    if session_obj is None:
+        raise ValueError(f"Session {session_id} not found")
+    if session_obj.audio_key is None:
+        raise ValueError(f"Session {session_id} has no audio_key")
+    audio_key = session_obj.audio_key
 
     transcript_result = await transcribe_audio(audio_key)
 
