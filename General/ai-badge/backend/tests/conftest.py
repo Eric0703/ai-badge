@@ -87,7 +87,10 @@ async def db(
     async with _test_engine.connect() as conn:
         session = AsyncSession(bind=conn, expire_on_commit=False)
         yield session
-        await session.commit()
+        try:
+            await session.commit()
+        except Exception:
+            await session.rollback()
         await session.close()
 
 
