@@ -1,6 +1,10 @@
-# Phase 1A 进度快照 — 2026-06-14（收口完成）
+# Phase 1A 进度快照 — 2026-06-15（已冻结 ❄️）
 
-## 整体状态：✅ T1~T12 全部完成
+## 整体状态：✅ T1~T12 全部完成 · 全量测试 154 passed · **已冻结**
+
+- **冻结 commit**：`bcdb480`
+- **测试结果**：`PYTHONPATH=. python -m pytest tests/ -v` → **154 passed in 29.97s**
+- **冻结说明**：Phase 1A 代码不再变更，除文档/状态记录更新外。后续工作在 Phase 2 分支推进。
 
 ---
 
@@ -23,16 +27,37 @@
 
 ---
 
-## 🔧 收口修复记录（2026-06-14）
+## 🔧 收口修复记录
+
+### 第一轮收口（2026-06-14）
 
 | # | 修复项 | 变更 |
 |---|--------|------|
 | 1 | 测试一键跑通 | `docker/init-test-db.sh` 自动创建 `ai_badge_test`；conftest.py 增加 auto-create 逻辑；`openai_whisper.py` 增加 `client=` 参数 |
-| 2 | sessions.device_id | 创建 session 时如未传 `device_id`，自动查找用户的 `virtual_phone_mic` device |
+| 2 | sessions.device_id | 创建 session 时如未传 `device_id`，自动查找用户的 `virtual_phone_mic` device；ORM + migration 改为 `NOT NULL`，FK `ondelete=RESTRICT`（migration 003 处理已有库升级回填） |
 | 3 | 统一状态变更入口 | 新增 `artifacts/service.py`：`approve_artifact/reject_artifact/request_publish/mark_published` + `_transition_session`；router 不再直接写 status |
 | 4 | Worker 未知 handler | 未知 `job_type` 标记为 `failed`（含 `error_message`），不再 `completed`；deletion_job 同理 |
 | 5 | 收敛事务边界 | `artifacts/router.py` reject 路径改用同一 `db` session，不再 `async_session_factory()` |
-| 6 | 更新文档 | README 增加 Python 版本、Mock provider 规则、Stub/TODO 清单、本地开发命令；STATUS 更新至全部完成 |
+| 6 | workflow_events 扩展 | `job_id` 改 nullable，新增 `session_id/artifact_id/resource_type/resource_id`（migration 002），消除 FK 兜底冲突 |
+
+### 第二轮：测试基础设施稳定化（2026-06-15）
+
+经过多轮真实 PostgreSQL 复测，逐类定位并修复：
+
+| # | 根因 | 最终方案 |
+|---|------|----------|
+| 1 | pytest/pytest-asyncio 版本漂移 | `pyproject.toml` 锁定 `pytest==8.3.4` + `pytest-asyncio==0.24.0`；`[tool.setuptools.packages.find] include=["app*"]` 修复 flat-layout |
+| 2 | event loop scope mismatch | conftest 采用 **function-scoped engine + TRUNCATE 隔离模型**；HTTP override 与 db fixture 各自独立 connection/session，消除 asyncpg "another operation in progress" |
+| 3 | agent handler 跨库 | capture/distiller/integration/deletion 全部改用 **Worker 传入的 session**，不再内部 `async_session_factory()`（生产侧也变成单事务原子） |
+| 4 | consent 授权被红线拒绝 | consent 端点先校验 session 状态再设 `consent_granted`，不调 `redline_consent_required` |
+| 5 | 终端态可重复操作 | `can_transition` 对 CANCELLED/RETRACTED 终端态拒绝 self-transition（返回 409） |
+| 6 | approve 非法转换 | `approve_artifact` 走合法两步 `needs_review → reviewing → approved` |
+| 7 | e2e 读到过期 ORM | e2e 断言查询前 `await db.rollback()` 结束旧事务 + 过期 identity map |
+| 8 | publish handler 未注册 | `worker_loop()` 导入 `app.agents.integration`；e2e 测试顶部导入全部 agent，收集阶段即注册 |
+| 9 | PolicyViolation → 500 | `main.py` 新增异常处理器，统一映射为 HTTP 403 |
+| 10 | 仓库结构污染 | GitHub repo 恢复为根级布局（`backend/` `docker/` `docker-compose.yml` `README.md`），清除 workspace 目录残留 |
+
+**GitHub 仓库**：https://github.com/Eric0703/ai-badge （根级布局，main 分支 `bcdb480`）
 
 ---
 
@@ -84,11 +109,49 @@ ai-badge/
 
 ---
 
-## ⚠️ Phase 1A 剩余风险
+## ✅ Phase 1A 冻结检查清单
 
-| 风险 | 说明 | 缓解 |
+| 项 | 状态 |
+|------|------|
+| T1~T12 全部交付 | ✅ |
+| 全量测试 154 passed（真实 PostgreSQL UTF8） | ✅ |
+| `alembic upgrade head` 001→002→003 通过 | ✅ |
+| 代码已推 GitHub（根级布局） | ✅ |
+| 所有 agent handler 统一用传入 session | ✅ |
+| 状态变更集中在 service/orchestrator | ✅ |
+
+---
+
+## ⚠️ Phase 1A 遗留项（带入 Phase 2）
+
+| 遗留项 | 说明 | Phase 2 处理 |
 |------|------|------|
-| 未跑真实 DB 测试 | 纯逻辑测试全绿，但需 `docker compose up -d` 后跑 `pytest tests/ -v` 验证 DB 依赖测试 | 下一轮执行 |
-| OpenAI API Key 未配置 | Whisper/LLM 仍为 `NotImplementedError`，Mock provider 可用 | Phase 1B 前配置 |
-| 测试数据库需首次 `docker compose up -d` | `init-test-db.sh` 仅在首次创建容器时运行 | README 已说明 |
-| Worker 的 `_execute_job` 心跳线程仍用 `async_session_factory` | 符合"worker loop 可创建新 session"规则，无需修改 | 已验证 |
+| OpenAI API Key 未配置 | `openai_whisper.py` / `openai_llm.py` 仍为 `NotImplementedError`，Mock provider 跑通全链路 | 接真实 provider或替换模型时配置 |
+| local filesystem 存储 | `storage/local.py` stub，音频存 `/data/audio` | Phase 2 接 MinIO/S3 |
+| 全员 owner 角色 | 无 RBAC，`artifacts.assigned_reviewer_id` 预留但未用 | Phase 2 做 RBAC + Reviewer 分配 |
+| 无前端 | 仅 curl + pytest 验证 | Phase 2 做 Next.js 控制台 |
+| 飞书发布为 stub | publish handler 返回 fake `feishu_doc_id` | Phase 2 接真实飞书 API |
+| 无 refresh token | JWT 过期后重新登录 | Phase 2 补 refresh token |
+
+---
+
+## 🚀 Phase 2 开发前准备
+
+**固化原则（从 Phase 1A 收口沉淀，Phase 2 必须延续）**：
+- router 只调 service，不直接写状态
+- 外部服务走 provider/connector 适配层
+- 状态变更集中在 service/orchestrator，走合法状态机转换
+- agent handler 统一用传入 session，不内部新开 `async_session_factory`
+- 测试：TRUNCATE 隔离模型，HTTP 与 db fixture 独立 connection，Mock provider 优先
+- PolicyViolation 统一映射 HTTP 状态，不吞异常
+
+**Phase 2 待拆解 Ticket（开发包 1B-1~1B-5）**：
+| # | 模块 | 依赖 |
+|---|------|------|
+| 1B-1 | Next.js 控制台（登录/Dashboard/审核/审计） | Phase 1A API |
+| 1B-2 | RBAC 权限（Contributor/Reviewer + assigned_reviewer_id 分配） | Phase 1A |
+| 1B-3 | MinIO/S3 storage provider 替换 local stub | Phase 1A |
+| 1B-4 | Refresh token 表 + 策略 | Phase 1A |
+| 1B-5 | Flutter BLE Bridge（独立 repo） | 工牌硬件就绪 |
+
+> 下一步：确认 Phase 2 首批范围（建议先 1B-1 前端 + 1B-2 RBAC，或先 1B-3 存储），再出开发包与开工令。
