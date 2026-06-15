@@ -11,7 +11,6 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.db.session import async_session_factory
 from app.models.artifact import Artifact
 from app.models.deletion_job import DeletionJob
 from app.models.session import Session as SessionModel
@@ -22,13 +21,15 @@ logger = logging.getLogger("deletion.agent")
 
 @register_handler("delete_artifact_rows")
 async def handle_delete_artifacts(session: AsyncSession, job: DeletionJob):
-    """Hard-delete all artifacts for a session."""
+    """Hard-delete all artifacts for a session.
+
+    Uses the passed-in `session` for all DB access (single transaction),
+    consistent with how the Worker invokes handlers.
+    """
     logger.info(f"Deleting artifacts for session {job.session_id}")
-    async with async_session_factory() as s:
-        await s.execute(
-            delete(Artifact).where(Artifact.session_id == job.session_id)
-        )
-        await s.commit()
+    await session.execute(
+        delete(Artifact).where(Artifact.session_id == job.session_id)
+    )
     job.status = "completed"
     await session.commit()
 

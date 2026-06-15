@@ -6,7 +6,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.artifacts.service import mark_published
-from app.db.session import async_session_factory
 from app.models.artifact import Artifact
 from app.models.job import Job
 from app.orchestrator.worker import register_handler
@@ -19,7 +18,8 @@ async def handle_publish_job(session: AsyncSession, job: Job):
     """Publish an artifact — Feishu stub for Phase 1A.
 
     Generates a fake feishu_doc_id and marks the artifact as published.
-    Uses the service layer for state transitions (artifacts/service.py).
+    Uses the passed-in `session` for all DB access (single transaction),
+    consistent with how the Worker invokes handlers.
     """
     logger.info(f"Handling publish job {job.id}")
 
@@ -32,15 +32,12 @@ async def handle_publish_job(session: AsyncSession, job: Job):
     # Feishu stub: generate fake doc ID
     feishu_doc_id = f"feishu-doc-{artifact_id[:8]}"
 
-    # Worker boundary: new session is allowed for independent background work
-    async with async_session_factory() as s:
-        r = await s.execute(
-            select(Artifact).where(Artifact.id == artifact_id)
-        )
-        artifact = r.scalar_one_or_none()
-        if artifact:
-            await mark_published(s, artifact, feishu_doc_id=feishu_doc_id)
-        await s.commit()
+    r = await session.execute(
+        select(Artifact).where(Artifact.id == artifact_id)
+    )
+    artifact = r.scalar_one_or_none()
+    if artifact:
+        await mark_published(session, artifact, feishu_doc_id=feishu_doc_id)
 
     job.output_payload = {"feishu_doc_id": feishu_doc_id}
     job.status = "completed"

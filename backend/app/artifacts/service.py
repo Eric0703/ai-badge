@@ -56,6 +56,13 @@ async def approve_artifact(
     )
     remaining = r.scalars().all()
     if not remaining:
+        # Advance session through legal transitions: needs_review → reviewing → approved
+        r2 = await db.execute(
+            select(SessionModel).where(SessionModel.id == artifact.session_id)
+        )
+        sess = r2.scalar_one_or_none()
+        if sess and SessionStatus(sess.status) == SessionStatus.NEEDS_REVIEW:
+            await _transition_session(db, artifact.session_id, SessionStatus.REVIEWING)
         await _transition_session(db, artifact.session_id, SessionStatus.APPROVED)
 
     logger.info(f"Artifact {artifact.id} approved by {reviewer_id}")
