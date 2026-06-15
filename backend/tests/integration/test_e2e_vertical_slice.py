@@ -146,6 +146,7 @@ class TestHappyPath:
         assert resp.json()["status"] == "approved"
 
         # Verify session is now approved
+        await db.rollback()
         result = await db.execute(
             select(SessionModel).where(SessionModel.id == sid)
         )
@@ -163,6 +164,7 @@ class TestHappyPath:
         await _run_handler(db, sid, "publish")
 
         # Verify published state
+        await db.rollback()
         result = await db.execute(
             select(SessionModel).where(SessionModel.id == sid)
         )
@@ -312,6 +314,7 @@ class TestReviewCycle:
         assert resp.status_code == 200
 
         # Verify session approved
+        await db.rollback()
         result = await db.execute(
             select(SessionModel).where(SessionModel.id == sid)
         )
@@ -355,6 +358,7 @@ class TestRetractSaga:
         await _run_handler(db, sid, "publish")
 
         # Verify published
+        await db.rollback()
         result = await db.execute(
             select(SessionModel).where(SessionModel.id == sid)
         )
@@ -402,6 +406,7 @@ class TestRetractSaga:
         assert count == 0  # Artifacts hard-deleted
 
         # Verify session tombstone exists
+        await db.rollback()
         result = await db.execute(
             select(SessionModel).where(SessionModel.id == sid)
         )
@@ -481,6 +486,10 @@ async def _run_handler(db, session_id, job_type: str):
     """Execute a job handler for the given session and job type."""
     from sqlalchemy import select
     from app.models.job import Job
+
+    # End any stale transaction + expire identity map so we read state
+    # committed by the HTTP API connection (e.g. session status changes).
+    await db.rollback()
 
     result = await db.execute(
         select(Job).where(
