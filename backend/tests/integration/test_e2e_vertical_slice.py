@@ -29,6 +29,14 @@ from app.models.deletion_job import DeletionJob
 from app.models.audit_log import AuditLog
 from app.orchestrator.service import STATUS_COMPLETED, STATUS_FAILED, STATUS_PENDING
 
+# Import agent handlers so they self-register via @register_handler.
+# Module-level import ensures all handlers (including publish) are registered
+# at collection time, regardless of test execution order.
+import app.agents.capture  # noqa: F401,E402
+import app.agents.distiller  # noqa: F401,E402
+import app.agents.integration  # noqa: F401,E402
+import app.agents.deletion  # noqa: F401,E402
+
 
 # ══════════════════════════════════════════════════════════════════════
 # Path 1: Happy Path — Full flow from register to published
@@ -503,8 +511,7 @@ async def _run_handler(db, session_id, job_type: str):
 
     from app.orchestrator.worker import JOB_HANDLERS
     handler = JOB_HANDLERS.get(job_type)
-    if handler is None:
-        return
+    assert handler is not None, f"No handler registered for job_type={job_type}"
 
     job.status = "running"
     await db.flush()

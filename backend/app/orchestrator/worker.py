@@ -165,6 +165,8 @@ async def worker_loop():
     # Import agent handlers so they self-register via @register_handler
     import app.agents.capture  # noqa: F401
     import app.agents.distiller  # noqa: F401
+    import app.agents.integration  # noqa: F401
+    import app.agents.deletion  # noqa: F401
 
     logger.info(f"[{WORKER_ID}] Starting worker, poll_interval={POLL_INTERVAL}s, heartbeat={HEARTBEAT_INTERVAL}s, timeout={JOB_TIMEOUT}s")
     logger.info(f"[{WORKER_ID}] Registered handlers: {list(JOB_HANDLERS.keys())}")
@@ -172,9 +174,6 @@ async def worker_loop():
     if settings.openai_api_key == "sk-placeholder":
         logger.warning(f"[{WORKER_ID}] ⚠️  OPENAI_API_KEY is still 'sk-placeholder' — Whisper/LLM jobs will fail!")
         logger.warning(f"[{WORKER_ID}]    Set OPENAI_API_KEY environment variable or configure an alternative provider.")
-
-    # Import deletion agent for handler registration
-    import app.agents.deletion  # noqa: F401
 
     while not _shutdown.is_set():
         try:
