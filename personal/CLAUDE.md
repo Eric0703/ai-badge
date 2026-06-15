@@ -1,0 +1,1 @@
+/home/user/workspace-root/personal/AGENTS.md

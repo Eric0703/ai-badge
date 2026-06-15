@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh" style="scroll-snap-type: y mandatory; overflow-y: scroll; height: 100%; scroll-behavior: smooth;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 工具渗透率 · 翻页报告</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+    body { height: 100%; font-family: 'PingFang SC', 'Helvetica Neue', sans-serif; }
+
+    section {
+      min-height: 100vh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Dot navigation */
+    .dots {
+      position: fixed;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 999;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(148, 163, 184, 0.3);
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+    }
+    .dot.active {
+      background: #3b82f6;
+      transform: scale(1.3);
+    }
+    .dot:hover { background: rgba(148, 163, 184, 0.7); }
+
+    /* Animations */
+    .anim {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.25,0.46,0.45,0.94),
+                  transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    .anim.visible { opacity: 1; transform: translateY(0); }
+    .anim-d1 { transition-delay: 0.1s; }
+    .anim-d2 { transition-delay: 0.2s; }
+    .anim-d3 { transition-delay: 0.35s; }
+    .anim-d4 { transition-delay: 0.5s; }
+    .anim-d5 { transition-delay: 0.65s; }
+
+    /* ── SLIDE 1: Cover ── */
+    #s1 {
+      background: linear-gradient(135deg, #020817 0%, #0c1a3d 50%, #1a0533 100%);
+      flex-direction: column;
+    }
+    .cover-eyebrow {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #4a9eff;
+      margin-bottom: 20px;
+    }
+    .cover-title {
+      font-size: clamp(36px, 6vw, 72px);
+      font-weight: 900;
+      color: #f1f5f9;
+      text-align: center;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .cover-sub {
+      font-size: clamp(14px, 2vw, 18px);
+      color: #64748b;
+      margin-top: 16px;
+      text-align: center;
+    }
+    .cover-hero {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      margin-top: 48px;
+      justify-content: center;
+    }
+    .hero-num {
+      font-size: clamp(80px, 16vw, 160px);
+      font-weight: 900;
+      color: #60a5fa;
+      line-height: 0.9;
+    }
+    .hero-unit {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      color: #60a5fa;
+      padding-bottom: 8px;
+    }
+    .hero-label {
+      font-size: 14px;
+      color: #475569;
+      text-align: center;
+      margin-top: 8px;
+      letter-spacing: 0.05em;
+    }
+    .cover-source {
+      position: absolute;
+      bottom: 32px;
+      font-size: 11px;
+      color: #334155;
+      letter-spacing: 0.05em;
+    }
+    .scroll-hint {
+      position: absolute;
+      bottom: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: #334155;
+      font-size: 11px;
+    }
+    .scroll-arrow {
+      width: 20px;
+      height: 20px;
+      border-right: 2px solid #334155;
+      border-bottom: 2px solid #334155;
+      transform: rotate(45deg);
+      animation: bounce 1.5s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: rotate(45deg) translateY(0); }
+      50% { transform: rotate(45deg) translateY(4px); }
+    }
+
+    /* Stars background for slide 1 */
+    .stars {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0;
+      animation: twinkle 3s infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 0.6; }
+    }
+
+    /* ── SLIDE 2: Trend ── */
+    #s2 { background: #ffffff; }
+    .slide-inner {
+      width: 100%;
+      max-width: 1100px;
+      padding: 60px 64px;
+    }
+    .slide-tag {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #3b82f6;
+      background: #eff6ff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .slide-headline {
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .slide-sub {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+    .slide-layout-2col {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .stat-highlight {
+      background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 32px;
+    }
+    .sh-num {
+      font-size: 64px;
+      font-weight: 900;
+      color: #2563eb;
+      line-height: 1;
+    }
+    .sh-label {
+      font-size: 14px;
+      color: #475569;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .sh-detail {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 12px;
+    }
+    .chart-box {
+      height: 280px;
+    }
+
+    /* ── SLIDE 3: Countries ── */
+    #s3 { background: #0f172a; }
+    #s3 .slide-tag { color: #fb923c; background: #431407; }
+    #s3 .slide-headline { color: #f1f5f9; }
+    #s3 .slide-sub { color: #64748b; }
+    #s3 .slide-inner { max-width: 1100px; }
+
+    /* ── SLIDE 4: Generation ── */
+    #s4 { background: #fafafa; }
+    .gen-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .gen-callout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .gen-big {
+      font-size: 80px;
+      font-weight: 900;
+      color: #10b981;
+      line-height: 1;
+    }
+    .gen-divide {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: #fff7ed;
+      border-radius: 12px;
+      border-left: 4px solid #f97316;
+    }
+    .gen-divide-num { font-size: 28px; font-weight: 900; color: #ea580c; }
+    .gen-divide-desc { font-size: 13px; color: #78350f; line-height: 1.4; }
+
+    /* ── SLIDE 5: Use Cases ── */
+    #s5 { background: #ffffff; }
+
+    /* ── SLIDE 6: Closing ── */
+    #s6 {
+      background: linear-gradient(135deg, #020817 0%, #0c1a3d 100%);
+      flex-direction: column;
+    }
+    .closing-inner {
+      text-align: center;
+      max-width: 700px;
+      padding: 40px;
+    }
+    .closing-pill {
+      display: inline-block;
+      padding: 6px 16px;
+      border: 1px solid #1e3a6e;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #4a9eff;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .closing-headline {
+      font-size: clamp(28px, 5vw, 56px);
+      font-weight: 900;
+      color: #f1f5f9;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .closing-desc {
+      font-size: 16px;
+      color: #475569;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+    .format-cards {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+    .format-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 20px 24px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+    }
+    .format-card:hover {
+      background: rgba(59,130,246,0.1);
+      border-color: rgba(59,130,246,0.3);
+      transform: translateY(-2px);
+    }
+    .fc-icon { font-size: 24px; margin-bottom: 8px; }
+    .fc-label { font-size: 13px; color: #94a3b8; }
+    .fc-title { font-size: 15px; font-weight: 600; color: #e2e8f0; margin-top: 4px; }
+    .closing-source {
+      position: absolute;
+      bottom: 28px;
+      font-size: 11px;
+      color: #1e293b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dot Nav -->
+  <nav class="dots" id="dots">
+    <button class="dot active" onclick="scrollTo(0)"></button>
+    <button class="dot" onclick="scrollTo(1)"></button>
+    <button class="dot" onclick="scrollTo(2)"></button>
+    <button class="dot" onclick="scrollTo(3)"></button>
+    <button class="dot" onclick="scrollTo(4)"></button>
+    <button class="dot" onclick="scrollTo(5)"></button>
+  </nav>
+
+  <!-- ── SLIDE 1: Cover ── -->
+  <section id="s1">
+    <div class="stars" id="stars"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;position:relative;z-index:1;">
+      <div class="cover-eyebrow anim">Global AI Adoption Report 2025</div>
+      <div class="cover-title anim anim-d1">全球 AI 工具<br>渗透率报告</div>
+      <div class="cover-sub anim anim-d2">全球企业 AI 采用率年度追踪</div>
+      <div class="cover-hero anim anim-d3">
+        <div>
+          <div class="hero-num">88</div>
+          <div class="hero-label">全球企业 AI 采用率</div>
+        </div>
+        <div class="hero-unit">%</div>
+      </div>
+    </div>
+    <div class="scroll-hint anim anim-d4">
+      <span>向下翻页</span>
+      <div class="scroll-arrow"></div>
+    </div>
+    <div class="cover-source">数据来源：McKinsey & Company (2025) · Stanford HAI (2025) · Microsoft AI Economy Institute (2025)</div>
+  </section>
+
+  <!-- ── SLIDE 2: Growth Trend ── -->
+  <section id="s2">
+    <div class="slide-inner">
+      <div class="slide-tag anim">增长趋势</div>
+      <div class="slide-headline anim anim-d1">三年，涨了 <span style="color:#2563eb">11 倍</span></div>
+      <div class="slide-sub anim anim-d2">2022 年初仅 8%，到 2025 年底已达 88%，AI 已成为绝大多数企业的标配。</div>
+      <div class="slide-layout-2col anim anim-d3">
+        <div class="stat-highlight">
+          <div class="sh-num">+23pp</div>
+          <div class="sh-label">2024 年单年最大增量<br>从 55% 跃升至 78%</div>
+          <div class="sh-detail">2023 全年均值：55%<br>2024 全年均值：78%<br>2025 全年均值：88%</div>
+        </div>
+        <div class="chart-box" id="chart2"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 3: Countries ── -->
+  <section id="s3">
+    <div class="slide-inner">
+      <div class="slide-tag anim">国家排名</div>
+      <div class="slide-headline anim anim-d1">亚太与新兴市场领跑全球</div>
+      <div class="slide-sub anim anim-d2" style="color:#64748b">印度、新加坡、中国位居前三，欧洲传统经济体整体落后。</div>
+      <div class="chart-box anim anim-d3" style="height:340px" id="chart3"></div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 4: Generation ── -->
+  <section id="s4">
+    <div class="slide-inner">
+      <div class="slide-tag anim">年龄差距</div>
+      <div class="slide-headline anim anim-d1">年龄差距，<span style="color:#ea580c">高达 55 个百分点</span></div>
+      <div class="slide-sub anim anim-d2">Gen Z 的使用率是 60+ 人群的 3.6 倍，AI 工具正在加速代际分化。</div>
+      <div class="gen-grid anim anim-d3">
+        <div class="gen-callout">
+          <div>
+            <div style="font-size:14px;color:#94a3b8;margin-bottom:4px">代际倍差</div>
+            <div class="gen-big">3.6×</div>
+          </div>
+          <div class="gen-divide">
+            <div class="gen-divide-num">76%</div>
+            <div class="gen-divide-desc">Gen Z（18–24 岁）<br><span style="font-size:11px;color:#b45309">vs 60+ 人群仅 21%</span></div>
+          </div>
+          <div style="font-size:13px;color:#94a3b8;line-height:1.6">
+            数字原住民一代已将 AI 工具<br>视为默认工作方式。
+          </div>
+        </div>
+        <div class="chart-box" style="height:300px" id="chart4"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 5: Use Cases ── -->
+  <section id="s5">
+    <div class="slide-inner">
+      <div class="slide-tag anim">使用场景</div>
+      <div class="slide-headline anim anim-d1">写作，是 AI 的第一个入口</div>
+      <div class="slide-sub anim anim-d2">68% 的用户首先通过内容创作接触 AI，这是用户认知的最大公约数。</div>
+      <div class="slide-layout-2col anim anim-d3">
+        <div>
+          <div class="stat-highlight" style="background:linear-gradient(135deg,#f0fdf4,#f0fdfa);border-color:#bbf7d0">
+            <div class="sh-num" style="background:linear-gradient(135deg,#059669,#0d9488);-webkit-background-clip:text;-webkit-text-fill-color:transparent">68%</div>
+            <div class="sh-label">使用 AI 进行写作/<br>内容创作的比例</div>
+            <div class="sh-detail">排名第一的使用场景<br>显著高于代码（43%）</div>
+          </div>
+        </div>
+        <div class="chart-box" style="height:300px" id="chart5"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SLIDE 6: Closing ── -->
+  <section id="s6">
+    <div class="closing-inner">
+      <div class="closing-pill anim">一种信息，多种表现</div>
+      <div class="closing-headline anim anim-d1">同一份数据<br>三种阅读方式</div>
+      <div class="closing-desc anim anim-d2">
+        这份报告用翻页 PPT 呈现了 AI 渗透率的故事线。<br>
+        但同样的数据，还有两种完全不同的阅读体验。
+      </div>
+      <div class="format-cards anim anim-d3">
+        <div class="format-card">
+          <div class="fc-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <div class="fc-label">地图形态</div>
+          <div class="fc-title">世界热力地图</div>
+        </div>
+        <div class="format-card" style="border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);">
+          <div class="fc-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <path d="M8 21h8M12 17v4"/>
+              <path d="M7 8l3 3 2-2 3 3"/>
+            </svg>
+          </div>
+          <div class="fc-label">当前形态</div>
+          <div class="fc-title">翻页报告</div>
+        </div>
+        <div class="format-card">
+          <div class="fc-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </div>
+          <div class="fc-label">看板形态</div>
+          <div class="fc-title">交互式看板</div>
+        </div>
+      </div>
+    </div>
+    <div class="closing-source">数据来源：McKinsey & Company (2025) · Stanford HAI (2025) · Microsoft AI Economy Institute (2025)</div>
+  </section>
+
+  <script>
+    // ── Stars on slide 1 ──
+    const starsEl = document.getElementById('stars');
+    for (let i = 0; i < 80; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.top = Math.random() * 100 + '%';
+      s.style.animationDelay = Math.random() * 3 + 's';
+      s.style.animationDuration = (2 + Math.random() * 3) + 's';
+      starsEl.appendChild(s);
+    }
+
+    // ── Intersection Observer for animations ──
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.anim').forEach(el => el.classList.add('visible'));
+        }
+      });
+    }, { threshold: 0.3 });
+
+    document.querySelectorAll('section').forEach(s => observer.observe(s));
+
+    // ── Dot nav highlight ──
+    const sections = document.querySelectorAll('section');
+    const dots = document.querySelectorAll('.dot');
+    const dotObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = Array.from(sections).indexOf(entry.target);
+          dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+      });
+    }, { threshold: 0.6 });
+    sections.forEach(s => dotObserver.observe(s));
+
+    function scrollTo(idx) {
+      sections[idx].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ── Chart 2: Growth Trend ──
+    let chart2Inited = false;
+    const chartObserver2 = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !chart2Inited) {
+        chart2Inited = true;
+        const c = echarts.init(document.getElementById('chart2'));
+        const quarters = ['2022 Q1','Q2','Q3','Q4','2023 Q1','Q2','Q3','Q4','2024 Q1','Q2','Q3','Q4','2025 Q1','Q2','Q3','Q4'];
+        const vals = [8, 12, 15, 19, 28, 38, 46, 55, 62, 68, 74, 78, 82, 85, 87, 88];
+        c.setOption({
+          backgroundColor: 'transparent',
+          grid: { top: 12, right: 12, bottom: 12, left: 12, containLabel: true },
+          tooltip: {
+            trigger: 'axis',
+            backgroundColor: '#0f172a',
+            borderColor: '#1e293b',
+            textStyle: { color: '#e2e8f0' },
+            formatter: (p) => `${p[0].name}<br>${p[0].value}%`
+          },
+          xAxis: {
+            type: 'category',
+            data: quarters,
+            axisLine: { lineStyle: { color: '#e2e8f0' } },
+            axisLabel: { color: '#94a3b8', fontSize: 11 },
+            axisTick: { show: false }
+          },
+          yAxis: {
+            type: 'value',
+            max: 80,
+            axisLabel: { color: '#94a3b8', fontSize: 11, formatter: '{value}%' },
+            splitLine: { lineStyle: { color: '#f1f5f9' } }
+          },
+          series: [{
+            type: 'line',
+            data: vals,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6,
+            lineStyle: { color: '#3b82f6', width: 3 },
+            itemStyle: { color: '#3b82f6' },
+            areaStyle: {
+              color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [{ offset: 0, color: 'rgba(59,130,246,0.2)' }, { offset: 1, color: 'rgba(59,130,246,0)' }] }
+            },
+            markPoint: {
+              data: [{ type: 'max', name: '最高值' }],
+              label: { color: '#fff', fontSize: 12 },
+              itemStyle: { color: '#2563eb' }
+            }
+          }]
+        });
+        window.addEventListener('resize', () => c.resize());
+      }
+    }, { threshold: 0.5 });
+    chartObserver2.observe(document.getElementById('s2'));
+
+    // ── Chart 3: Country Ranking ──
+    let chart3Inited = false;
+    const chartObserver3 = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !chart3Inited) {
+        chart3Inited = true;
+        const c = echarts.init(document.getElementById('chart3'));
+        const countries = ['日本','德国','英国','加拿大','美国','澳大利亚','巴西','韩国','中国','印度','新加坡','阿联酋'];
+        const vals = [51, 55, 60, 62, 72, 65, 76, 80, 82, 85, 85, 93];
+        const colors = ['#8b5cf6','#8b5cf6','#8b5cf6','#3b82f6','#3b82f6','#3b82f6','#f97316','#f97316','#f97316','#f97316','#f97316','#f97316'];
+        c.setOption({
+          backgroundColor: 'transparent',
+          grid: { top: 8, right: 60, bottom: 8, left: 12, containLabel: true },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            backgroundColor: '#0f172a',
+            borderColor: '#1e293b',
+            textStyle: { color: '#e2e8f0' },
+            formatter: (p) => `${p[0].name}: ${p[0].value}%`
+          },
+          xAxis: {
+            type: 'value',
+            max: 90,
+            axisLabel: { color: '#94a3b8', fontSize: 11, formatter: '{value}%' },
+            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }
+          },
+          yAxis: {
+            type: 'category',
+            data: countries,
+            axisLabel: { color: '#94a3b8', fontSize: 12 },
+            axisTick: { show: false }
+          },
+          series: [{
+            type: 'bar',
+            data: vals.map((v, i) => ({ value: v, itemStyle: { color: colors[i], borderRadius: [0, 4, 4, 0] } })),
+            label: {
+              show: true, position: 'right',
+              formatter: '{c}%',
+              color: '#94a3b8', fontSize: 12
+            },
+            barMaxWidth: 22,
+          }]
+        });
+        window.addEventListener('resize', () => c.resize());
+      }
+    }, { threshold: 0.5 });
+    chartObserver3.observe(document.getElementById('s3'));
+
+    // ── Chart 4: Generations ──
+    let chart4Inited = false;
+    const chartObserver4 = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !chart4Inited) {
+        chart4Inited = true;
+        const c = echarts.init(document.getElementById('chart4'));
+        const gens = ['60+','婴儿潮\n(45–59)','Gen X\n(35–44)','千禧一代\n(25–34)','Gen Z\n(18–24)'];
+        const vals = [21, 36, 55, 71, 76];
+        c.setOption({
+          backgroundColor: 'transparent',
+          grid: { top: 8, right: 60, bottom: 8, left: 12, containLabel: true },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: (p) => `${p[0].name}: ${p[0].value}%`
+          },
+          xAxis: {
+            type: 'value', max: 90,
+            axisLabel: { color: '#94a3b8', fontSize: 11, formatter: '{value}%' },
+            splitLine: { lineStyle: { color: '#f1f5f9' } }
+          },
+          yAxis: {
+            type: 'category',
+            data: gens,
+            axisLabel: { color: '#475569', fontSize: 12 },
+            axisTick: { show: false }
+          },
+          series: [{
+            type: 'bar',
+            data: vals.map((v, i) => ({
+              value: v,
+              itemStyle: {
+                color: i === 4 ? '#10b981' : i === 3 ? '#3b82f6' : i === 2 ? '#f59e0b' : '#e2e8f0',
+                borderRadius: [0, 4, 4, 0]
+              }
+            })),
+            label: { show: true, position: 'right', formatter: '{c}%', color: '#64748b', fontSize: 12 },
+            barMaxWidth: 28,
+          }]
+        });
+        window.addEventListener('resize', () => c.resize());
+      }
+    }, { threshold: 0.5 });
+    chartObserver4.observe(document.getElementById('s4'));
+
+    // ── Chart 5: Use Cases ──
+    let chart5Inited = false;
+    const chartObserver5 = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !chart5Inited) {
+        chart5Inited = true;
+        const c = echarts.init(document.getElementById('chart5'));
+        const uses = ['数据分析','语言翻译','图像生成','代码辅助','搜索研究','写作创作'];
+        const vals = [28, 33, 37, 43, 54, 68];
+        c.setOption({
+          backgroundColor: 'transparent',
+          grid: { top: 8, right: 60, bottom: 8, left: 12, containLabel: true },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: (p) => `${p[0].name}: ${p[0].value}%`
+          },
+          xAxis: {
+            type: 'value', max: 80,
+            axisLabel: { color: '#94a3b8', fontSize: 11, formatter: '{value}%' },
+            splitLine: { lineStyle: { color: '#f1f5f9' } }
+          },
+          yAxis: {
+            type: 'category',
+            data: uses,
+            axisLabel: { color: '#475569', fontSize: 12 },
+            axisTick: { show: false }
+          },
+          series: [{
+            type: 'bar',
+            data: vals.map((v, i) => ({
+              value: v,
+              itemStyle: {
+                color: i === 5 ? '#059669' : '#d1fae5',
+                borderRadius: [0, 4, 4, 0]
+              }
+            })),
+            label: { show: true, position: 'right', formatter: '{c}%', color: '#64748b', fontSize: 12 },
+            barMaxWidth: 28,
+          }]
+        });
+        window.addEventListener('resize', () => c.resize());
+      }
+    }, { threshold: 0.5 });
+    chartObserver5.observe(document.getElementById('s5'));
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "integrations": [
+    {
+      "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "GitHub",
+      "secretKey": "GITHUB_TOKEN",
+      "description": "Use with `gh` CLI (env: GH_TOKEN)",
+      "baseUrl": "https://api.github.com",
+      "createdBy": "jasper.lijia@gmail.com",
+      "updatedBy": "jasper.lijia@gmail.com",
+      "updatedAt": "2026-06-14T10:30:00Z"
+    }
+  ]
+}

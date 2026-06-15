@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Calendar — Apex & Co.</title>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#F5F3FF; --white:#ffffff; --dark:#1E1B4B; --border:#E5E7EB; --muted:#6B7280; --primary:#7C3AED; --primary-light:#EDE9FE; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--dark); font-family:'Inter',sans-serif; min-height:100vh; padding:28px; }
+.dm { font-family:'DM Sans',sans-serif; }
+.badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+.day-cell { background:var(--white); border:1px solid var(--border); border-radius:8px; padding:8px; min-height:100px; vertical-align:top; }
+.day-cell.today { border-color:#7C3AED; background:#FAFAFF; }
+.day-cell.weekend { background:#F9FAFB; }
+.content-item { border-radius:5px; padding:5px 7px; margin-bottom:4px; font-size:11px; cursor:pointer; transition:opacity 0.15s; line-height:1.3; }
+.content-item:hover { opacity:0.8; }
+.legend-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.stat-card { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:14px 18px; }
+.tab-btn { padding:7px 16px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1px solid var(--border); background:var(--white); color:var(--muted); transition:all 0.15s; }
+.tab-btn.active { background:var(--primary-light); color:#7C3AED; border-color:#C4B5FD; }
+select { background:var(--white); border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-size:13px; color:var(--dark); cursor:pointer; outline:none; font-family:inherit; }
+</style>
+</head>
+<body>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Apex & Co. · Operations</div>
+      <h1 class="dm" style="font-size:26px;font-weight:700;">Content Calendar</h1>
+      <p style="color:var(--muted);font-size:14px;margin-top:4px;">All clients · March 2025 · 42 pieces scheduled</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div style="display:flex;gap:6px;">
+        <button class="tab-btn active" id="view-month" onclick="setView('month',this)">Month</button>
+        <button class="tab-btn" id="view-list" onclick="setView('list',this)">List</button>
+      </div>
+      <select id="clientSelect" onchange="render()">
+        <option value="all">All Clients</option>
+        <option value="Lumen Health">Lumen Health</option>
+        <option value="Vivid Apparel">Vivid Apparel</option>
+        <option value="NorthScale">NorthScale</option>
+        <option value="Bloom Organic">Bloom Organic</option>
+      </select>
+      <div style="background:var(--primary);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <iconify-icon icon="lucide:plus" style="font-size:14px;"></iconify-icon> Add Content
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px;">
+    <div class="stat-card" style="border-left:3px solid #7C3AED;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Blog Posts</div>
+      <div class="dm" style="font-size:22px;font-weight:700;">9</div>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #EC4899;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Social Posts</div>
+      <div class="dm" style="font-size:22px;font-weight:700;">18</div>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #10B981;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Emails</div>
+      <div class="dm" style="font-size:22px;font-weight:700;">8</div>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #F59E0B;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Videos</div>
+      <div class="dm" style="font-size:22px;font-weight:700;">4</div>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #06B6D4;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Newsletters</div>
+      <div class="dm" style="font-size:22px;font-weight:700;">3</div>
+    </div>
+    <div class="stat-card" style="border-left:3px solid #94A3B8;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Scheduled</div>
+      <div class="dm" style="font-size:22px;font-weight:700;">42</div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div style="display:flex;gap:16px;align-items:center;margin-bottom:20px;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 16px;flex-wrap:wrap;">
+    <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Channel:</span>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span class="legend-dot" style="background:#7C3AED;"></span>Blog / SEO</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span class="legend-dot" style="background:#EC4899;"></span>Social</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span class="legend-dot" style="background:#10B981;"></span>Email</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span class="legend-dot" style="background:#F59E0B;"></span>Video</div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span class="legend-dot" style="background:#06B6D4;"></span>Newsletter</div>
+    <div style="margin-left:auto;display:flex;gap:12px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="width:10px;height:10px;border-radius:2px;background:#D1FAE5;border:1px solid #6EE7B7;display:inline-block;"></span>Published</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="width:10px;height:10px;border-radius:2px;background:#FEF3C7;border:1px solid #FCD34D;display:inline-block;"></span>In Review</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><span style="width:10px;height:10px;border-radius:2px;background:#EDE9FE;border:1px solid #C4B5FD;display:inline-block;"></span>Scheduled</div>
+    </div>
+  </div>
+
+  <!-- Calendar header -->
+  <div id="calendar-header" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;">
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0;">SUN</div>
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0;">MON</div>
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0;">TUE</div>
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0;">WED</div>
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0;">THU</div>
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0;">FRI</div>
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:6px 0;">SAT</div>
+  </div>
+  <div id="calendarView"></div>
+  <div id="listView" style="display:none;"></div>
+
+<script>
+const typeColors = {
+  'Blog/SEO': { bg:'#EDE9FE', border:'#C4B5FD', text:'#7C3AED' },
+  'Social':   { bg:'#FCE7F3', border:'#F9A8D4', text:'#BE185D' },
+  'Email':    { bg:'#D1FAE5', border:'#6EE7B7', text:'#065F46' },
+  'Video':    { bg:'#FEF3C7', border:'#FCD34D', text:'#92400E' },
+  'Newsletter':{ bg:'#ECFEFF', border:'#67E8F9', text:'#164E63' },
+};
+const statusSuffix = { 'Published':'✓ ', 'In Review':'⏳ ', 'Scheduled':'' };
+
+const content = [
+  { day:1, type:'Email', title:'Spring arrivals email', client:'Vivid Apparel', status:'Published' },
+  { day:3, type:'Blog/SEO', title:'How to Build a Wellness Morning Routine', client:'Lumen Health', status:'Published' },
+  { day:4, type:'Social', title:'Spring collection reveal — IG Reel', client:'Vivid Apparel', status:'Published' },
+  { day:5, type:'Email', title:'Q1 product spotlight newsletter', client:'Bloom Organic', status:'Published' },
+  { day:5, type:'Social', title:'LinkedIn thought leadership: AI in B2B sales', client:'NorthScale', status:'Published' },
+  { day:6, type:'Social', title:'Behind-the-scenes studio day — Stories', client:'Vivid Apparel', status:'Published' },
+  { day:7, type:'Video', title:'Meet the Team: Bloom Organic founders', client:'Bloom Organic', status:'Published' },
+  { day:8, type:'Blog/SEO', title:'5 Signs Your Marketing Agency Isn\'t Measuring ROI Correctly', client:'NorthScale', status:'Published' },
+  { day:10, type:'Social', title:'Spring launch countdown posts (3-day series)', client:'Vivid Apparel', status:'Published' },
+  { day:10, type:'Email', title:'Win-back campaign — lapsed customers', client:'Vivid Apparel', status:'Published' },
+  { day:11, type:'Social', title:'New arrivals carousel — IG + FB', client:'Vivid Apparel', status:'Published' },
+  { day:12, type:'Blog/SEO', title:'Telehealth vs In-Person: Which is Right for You?', client:'Lumen Health', status:'In Review' },
+  { day:12, type:'Newsletter', title:'Weekly health tips digest — Mar W2', client:'Lumen Health', status:'Published' },
+  { day:13, type:'Social', title:'Organic skincare tips series (4 posts)', client:'Bloom Organic', status:'In Review' },
+  { day:14, type:'Email', title:'Patient re-engagement: missed appointment flow', client:'Lumen Health', status:'In Review' },
+  { day:14, type:'Video', title:'How We Make Our Serums — TikTok series', client:'Bloom Organic', status:'Scheduled' },
+  { day:15, type:'Social', title:'#SkincareSunday UGC repost campaign', client:'Bloom Organic', status:'Scheduled' },
+  { day:17, type:'Blog/SEO', title:'The Complete Guide to Enterprise SaaS Procurement', client:'NorthScale', status:'Scheduled' },
+  { day:18, type:'Email', title:'Mid-month sale announcement', client:'Vivid Apparel', status:'Scheduled' },
+  { day:18, type:'Newsletter', title:'NorthScale monthly product update digest', client:'NorthScale', status:'Scheduled' },
+  { day:19, type:'Social', title:'LinkedIn case study thread: Lumen patient growth', client:'Lumen Health', status:'Scheduled' },
+  { day:20, type:'Social', title:'Spring OOTD inspiration lookbook — IG Carousel', client:'Vivid Apparel', status:'Scheduled' },
+  { day:21, type:'Blog/SEO', title:'Vitamin C Serum: Complete Guide & Our Top Pick', client:'Bloom Organic', status:'Scheduled' },
+  { day:21, type:'Video', title:'NorthScale product demo walkthrough', client:'NorthScale', status:'Scheduled' },
+  { day:24, type:'Email', title:'Weekly wellness newsletter — Lumen Mar W4', client:'Lumen Health', status:'Scheduled' },
+  { day:25, type:'Social', title:'End-of-season sale teaser posts', client:'Vivid Apparel', status:'Scheduled' },
+  { day:26, type:'Blog/SEO', title:'Mental Health Apps: What Actually Works in 2025', client:'Lumen Health', status:'Scheduled' },
+  { day:27, type:'Newsletter', title:'Bloom Organic — monthly ingredient spotlight', client:'Bloom Organic', status:'Scheduled' },
+  { day:27, type:'Social', title:'Q1 wins recap — LinkedIn company update', client:'NorthScale', status:'Scheduled' },
+  { day:28, type:'Email', title:'Q2 preview + early access offer', client:'Vivid Apparel', status:'Scheduled' },
+  { day:31, type:'Social', title:'March recap Reel — brand moments', client:'Vivid Apparel', status:'Scheduled' },
+  { day:31, type:'Video', title:'Bloom Organic — UK launch teaser video', client:'Bloom Organic', status:'Scheduled' },
+];
+
+const startOffset = 6;
+const daysInMonth = 31;
+
+function render() {
+  const clientFilter = document.getElementById('clientSelect').value;
+  const filtered = clientFilter === 'all' ? content : content.filter(c => c.client === clientFilter);
+  renderMonth(filtered);
+  renderList(filtered);
+}
+
+function renderMonth(filtered) {
+  const totalCells = Math.ceil((daysInMonth + startOffset) / 7) * 7;
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">';
+  for (let i = 0; i < totalCells; i++) {
+    const day = i - startOffset + 1;
+    const isToday = day === 13;
+    const isWeekend = i % 7 === 0 || i % 7 === 6;
+    const dayContent = filtered.filter(c => c.day === day);
+    if (day < 1 || day > daysInMonth) {
+      html += '<div style="min-height:100px;"></div>';
+    } else {
+      const dayNumStyle = isToday
+        ? 'background:#7C3AED;color:white;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;'
+        : `color:${isWeekend?'#9CA3AF':'#374151'};font-size:12px;font-weight:600;`;
+      html += `<div class="day-cell ${isToday?'today':''} ${isWeekend?'weekend':''}">
+        <div style="margin-bottom:6px;"><span style="${dayNumStyle}">${day}</span></div>
+        ${dayContent.map(c => {
+          const t = typeColors[c.type];
+          const prefix = statusSuffix[c.status];
+          return `<div class="content-item" style="background:${t.bg};border:1px solid ${t.border};color:${t.text};" title="${c.client}: ${c.title}">${prefix}${c.title}</div>`;
+        }).join('')}
+      </div>`;
+    }
+  }
+  html += '</div>';
+  document.getElementById('calendarView').innerHTML = html;
+}
+
+function renderList(filtered) {
+  const sorted = [...filtered].sort((a,b) => a.day - b.day);
+  let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+  sorted.forEach(c => {
+    const t = typeColors[c.type];
+    const statusColor = c.status==='Published'?'#059669':c.status==='In Review'?'#D97706':'#7C3AED';
+    html += `<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+      <div style="width:36px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;font-family:'DM Sans',sans-serif;color:var(--dark);">${c.day}</div>
+        <div style="font-size:10px;color:var(--muted);">Mar</div>
+      </div>
+      <div style="width:3px;height:36px;background:${t.border};border-radius:2px;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:14px;color:var(--dark);">${c.title}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${c.client}</div>
+      </div>
+      <span style="background:${t.bg};border:1px solid ${t.border};color:${t.text};border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;">${c.type}</span>
+      <span style="font-size:11px;font-weight:600;color:${statusColor};">${c.status}</span>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('listView').innerHTML = html;
+}
+
+function setView(v, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (v === 'month') {
+    document.getElementById('calendarView').style.display = '';
+    document.getElementById('calendar-header').style.display = 'grid';
+    document.getElementById('listView').style.display = 'none';
+  } else {
+    document.getElementById('calendarView').style.display = 'none';
+    document.getElementById('calendar-header').style.display = 'none';
+    document.getElementById('listView').style.display = '';
+  }
+}
+
+render();
+</script>
+</body>
+</html>

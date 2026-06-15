@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 工具渗透率 · 全球热力地图</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@4.9.0/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+    body {
+      background: #070d1f;
+      color: #e2e8f0;
+      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: 20px 32px 12px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .title-group { }
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #4a9eff;
+      margin-bottom: 4px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      align-items: flex-end;
+    }
+    .stat-card {
+      text-align: right;
+    }
+    .stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: #60a5fa;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .stat-card.hot .stat-num {
+      color: #fb923c;
+    }
+    #map-container {
+      flex: 1;
+      min-height: 0;
+    }
+    footer {
+      padding: 8px 32px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .source {
+      font-size: 11px;
+      color: #334155;
+    }
+    .tooltip-hint {
+      font-size: 11px;
+      color: #334155;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #475569;
+    }
+    .legend-bar {
+      width: 160px;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #1e3a6e, #2563eb, #f59e0b, #ef4444);
+    }
+
+    /* ── Country Detail Panel ── */
+    #detail-panel {
+      position: fixed;
+      top: 0; right: -420px;
+      width: 400px;
+      height: 100vh;
+      background: #0c1628;
+      border-left: 1px solid #1e2d4d;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    #detail-panel.open { right: 0; }
+    .panel-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #1e2d4d;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-country-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.2;
+    }
+    .panel-country-flag {
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .panel-close {
+      background: none;
+      border: none;
+      color: #475569;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px 6px;
+      line-height: 1;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .panel-close:hover { color: #94a3b8; }
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px 24px;
+    }
+    .panel-body::-webkit-scrollbar { width: 4px; }
+    .panel-body::-webkit-scrollbar-track { background: transparent; }
+    .panel-body::-webkit-scrollbar-thumb { background: #1e3a6e; border-radius: 2px; }
+
+    .rate-hero {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .rate-big {
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1;
+      color: #60a5fa;
+    }
+    .rate-meta {
+      padding-bottom: 6px;
+    }
+    .rate-label { font-size: 11px; color: #475569; }
+    .rate-rank { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+    .rate-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .badge-hot { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .badge-mid { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-low { background: rgba(100,116,139,0.15); color: #64748b; }
+
+    .rate-bar-wrap {
+      background: #0f1b35;
+      border-radius: 4px;
+      height: 6px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .rate-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: #2563eb;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .section-title {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #334155;
+      margin-bottom: 10px;
+      margin-top: 20px;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .tag {
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      border: 1px solid #1e3a6e;
+      color: #93c5fd;
+      background: rgba(30,58,110,0.3);
+    }
+    .tag.tool { border-color: #1e40af; color: #93c5fd; background: rgba(30,64,175,0.2); }
+    .tag.usecase { border-color: #064e3b; color: #6ee7b7; background: rgba(6,78,59,0.2); }
+    .tag.policy { border-color: #4c1d95; color: #c4b5fd; background: rgba(76,29,149,0.2); }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .metric-item {
+      background: #0f1b35;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .metric-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1;
+    }
+    .metric-key {
+      font-size: 10px;
+      color: #475569;
+      margin-top: 4px;
+    }
+
+    .insight-box {
+      background: rgba(37,99,235,0.08);
+      border: 1px solid rgba(37,99,235,0.2);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+    .insight-box strong { color: #cbd5e1; }
+
+    .company-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .company-list li {
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .company-list li::before {
+      content: '·';
+      color: #334155;
+      flex-shrink: 0;
+    }
+    .company-name { color: #cbd5e1; font-weight: 500; }
+
+    .no-data-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #334155;
+    }
+    .no-data-state .icon { font-size: 32px; margin-bottom: 12px; }
+    .no-data-state p { font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-group">
+      <div class="eyebrow">Global AI Adoption Report 2025</div>
+      <h1>AI 工具渗透率 · 全球热力地图</h1>
+      <div class="subtitle">各国企业 AI 采用率 · 2025 年数据</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num">88%</div>
+        <div class="stat-label">全球企业采用率</div>
+      </div>
+      <div class="stat-card hot">
+        <div class="stat-num">+10pp</div>
+        <div class="stat-label">较 2024 年增长</div>
+      </div>
+    </div>
+  </header>
+
+  <div id="map-container"></div>
+
+  <!-- Country Detail Panel -->
+  <div id="detail-panel">
+    <div class="panel-header">
+      <div id="panel-country-info">
+        <div class="panel-country-flag" id="panel-flag"></div>
+        <div class="panel-country-name" id="panel-name"></div>
+      </div>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+
+  <footer>
+    <div class="source">数据来源：McKinsey & Company (2025) · Stanford HAI (2025) · Microsoft AI Economy Institute (2025)</div>
+    <div class="legend-row">
+      <span>0%</span>
+      <div class="legend-bar"></div>
+      <span>80%</span>
+    </div>
+    <div class="tooltip-hint">滚轮缩放 · 拖拽移动 · 悬停查看数据</div>
+  </footer>
+
+  <script>
+    const chart = echarts.init(document.getElementById('map-container'));
+
+    const data = [
+      // Asia-Pacific — Source: Stanford HAI 2025, Microsoft AI Economy Institute H2 2025
+      { name: 'India', value: 85 },
+      { name: 'Singapore', value: 85 },
+      { name: 'China', value: 82 },
+      { name: 'South Korea', value: 80 },
+      { name: 'Indonesia', value: 74 },
+      { name: 'Thailand', value: 77 },
+      { name: 'Vietnam', value: 72 },
+      { name: 'Philippines', value: 74 },
+      { name: 'Malaysia', value: 76 },
+      { name: 'Pakistan', value: 60 },
+      { name: 'Bangladesh', value: 58 },
+      { name: 'Japan', value: 51 },
+      { name: 'Australia', value: 65 },
+      { name: 'New Zealand', value: 62 },
+      { name: 'Myanmar', value: 50 },
+      { name: 'Cambodia', value: 52 },
+      { name: 'Sri Lanka', value: 55 },
+      { name: 'Nepal', value: 48 },
+      { name: 'Mongolia', value: 44 },
+      { name: 'Kazakhstan', value: 58 },
+      { name: 'Uzbekistan', value: 52 },
+      { name: 'Azerbaijan', value: 54 },
+      // Middle East — UAE #1 globally per Microsoft AI Economy Institute H2 2025
+      { name: 'Saudi Arabia', value: 78 },
+      { name: 'United Arab Emirates', value: 93 },
+      { name: 'Israel', value: 76 },
+      { name: 'Turkey', value: 70 },
+      { name: 'Iran', value: 46 },
+      { name: 'Iraq', value: 40 },
+      { name: 'Jordan', value: 60 },
+      { name: 'Kuwait', value: 72 },
+      { name: 'Qatar', value: 75 },
+      { name: 'Oman', value: 65 },
+      // Europe — Norway, Ireland, France, Spain lead per Microsoft 2025
+      { name: 'United Kingdom', value: 60 },
+      { name: 'Germany', value: 55 },
+      { name: 'France', value: 65 },
+      { name: 'Sweden', value: 60 },
+      { name: 'Netherlands', value: 58 },
+      { name: 'Spain', value: 63 },
+      { name: 'Italy', value: 52 },
+      { name: 'Poland', value: 54 },
+      { name: 'Russia', value: 48 },
+      { name: 'Ukraine', value: 45 },
+      { name: 'Norway', value: 68 },
+      { name: 'Denmark', value: 62 },
+      { name: 'Finland', value: 60 },
+      { name: 'Switzerland', value: 63 },
+      { name: 'Austria', value: 56 },
+      { name: 'Belgium', value: 62 },
+      { name: 'Portugal', value: 58 },
+      { name: 'Czech Republic', value: 52 },
+      { name: 'Romania', value: 44 },
+      { name: 'Hungary', value: 48 },
+      { name: 'Greece', value: 50 },
+      { name: 'Serbia', value: 44 },
+      { name: 'Croatia', value: 46 },
+      { name: 'Slovakia', value: 50 },
+      { name: 'Bulgaria', value: 43 },
+      // Americas
+      { name: 'United States of America', value: 72 },
+      { name: 'Canada', value: 62 },
+      { name: 'Mexico', value: 64 },
+      { name: 'Brazil', value: 76 },
+      { name: 'Argentina', value: 68 },
+      { name: 'Colombia', value: 65 },
+      { name: 'Chile', value: 63 },
+      { name: 'Peru', value: 58 },
+      { name: 'Venezuela', value: 50 },
+      { name: 'Ecuador', value: 54 },
+      { name: 'Bolivia', value: 47 },
+      { name: 'Paraguay', value: 45 },
+      { name: 'Uruguay', value: 60 },
+      { name: 'Guatemala', value: 50 },
+      { name: 'Costa Rica', value: 57 },
+      // Africa
+      { name: 'South Africa', value: 62 },
+      { name: 'Nigeria', value: 68 },
+      { name: 'Egypt', value: 65 },
+      { name: 'Kenya', value: 63 },
+      { name: 'Ethiopia', value: 43 },
+      { name: 'Tanzania', value: 40 },
+      { name: 'Ghana', value: 58 },
+      { name: 'Morocco', value: 57 },
+      { name: 'Algeria', value: 48 },
+      { name: 'Tunisia', value: 52 },
+      { name: 'Cameroon', value: 41 },
+      { name: 'Senegal', value: 46 },
+      { name: 'Mozambique', value: 32 },
+      { name: 'Madagascar', value: 29 },
+      { name: 'Zimbabwe', value: 37 },
+      { name: 'Zambia', value: 39 },
+      { name: 'Angola', value: 35 },
+      { name: 'Sudan', value: 36 },
+      { name: 'Ivory Coast', value: 49 },
+    ];
+
+    const option = {
+      backgroundColor: '#070d1f',
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: '#0f172a',
+        borderColor: '#1e293b',
+        borderWidth: 1,
+        padding: [10, 14],
+        textStyle: { color: '#e2e8f0', fontSize: 13 },
+        formatter: function(params) {
+          const zhName = ZH_NAMES[params.name] || params.name;
+          if (params.value !== undefined && params.value !== null && !isNaN(params.value)) {
+            const rank = data.sort((a, b) => b.value - a.value).findIndex(d => d.name === params.name) + 1;
+            const trend = params.value >= 65 ? '🔥 高渗透' : params.value >= 50 ? '📈 增长中' : '⬆ 上升中';
+            return `<div style="font-weight:600;margin-bottom:4px;font-size:14px">${zhName}</div>
+                    <div style="font-size:22px;font-weight:800;color:#60a5fa;margin-bottom:2px">${params.value}%</div>
+                    <div style="font-size:11px;color:#64748b">${trend} · 全球第 ${rank} 位</div>`;
+          }
+          return `<div style="color:#475569">${zhName}<br><span style="font-size:11px">暂无数据</span></div>`;
+        }
+      },
+      visualMap: {
+        min: 0,
+        max: 80,
+        left: 'auto',
+        right: 32,
+        bottom: 48,
+        show: false,
+        inRange: {
+          color: ['#0f1f3d', '#1e3a6e', '#1d4ed8', '#2563eb', '#3b82f6', '#f59e0b', '#ef4444']
+        },
+      },
+      series: [{
+        name: 'AI工具渗透率',
+        type: 'map',
+        mapType: 'world',
+        roam: true,
+        zoom: 1.2,
+        center: [15, 20],
+        data: data,
+        nameMap: {
+          'United States': 'United States of America',
+          'Korea': 'South Korea',
+          'Dem. Rep. Korea': 'North Korea',
+          'Russian Federation': 'Russia',
+          'Czech Rep.': 'Czech Republic',
+          'Bosnia and Herz.': 'Bosnia and Herzegovina',
+          "Côte d'Ivoire": 'Ivory Coast',
+          'Congo': 'Republic of the Congo',
+          'Dem. Rep. Congo': 'Democratic Republic of the Congo',
+          'Central African Rep.': 'Central African Republic',
+          'S. Sudan': 'South Sudan',
+          'Dominican Rep.': 'Dominican Republic',
+        },
+        emphasis: {
+          label: { show: false },
+          itemStyle: {
+            areaColor: '#f8fafc',
+            shadowBlur: 10,
+            shadowColor: 'rgba(96,165,250,0.4)'
+          }
+        },
+        itemStyle: {
+          areaColor: '#0f1b35',
+          borderColor: '#1e2d4d',
+          borderWidth: 0.6
+        },
+        label: { show: false }
+      }]
+    };
+
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
+
+    // ── Country Detail Data ──
+    const countryDetail = {
+      'United Arab Emirates': {
+        flag: '🇦🇪', nameZh: '阿联酋',
+        yoy: '+18pp', workforce: '78%',
+        tools: ['ChatGPT', 'Microsoft Copilot', 'GitHub Copilot', 'Gemini'],
+        usecases: ['客服自动化', '金融分析', '政府数字化', '智慧城市'],
+        companies: [
+          { name: 'G42', desc: '国家级 AI 独角兽，与 OpenAI 深度合作' },
+          { name: 'Microsoft UAE', desc: '15亿美元 AI 基础设施投资' },
+          { name: 'ADNOC AI Lab', desc: '石油行业 AI 应用先行者' },
+        ],
+        policy: 'UAE AI Strategy 2031',
+        policyTags: ['国家 AI 战略', '无监管沙盒', 'AI 部长级职位'],
+        insight: '全球 AI 采用率第一，政府强力推动。2024 年 <strong>G42 获 OpenAI 独家中东授权</strong>，AI 已成为非油经济支柱战略。'
+      },
+      'India': {
+        flag: '🇮🇳', nameZh: '印度',
+        yoy: '+22pp', workforce: '82%',
+        tools: ['ChatGPT', 'Google Gemini', 'GitHub Copilot', 'Midjourney'],
+        usecases: ['软件开发', 'BPO 转型', '教育科技', '医疗诊断'],
+        companies: [
+          { name: 'Infosys AI', desc: '10 万员工完成 AI 技能认证' },
+          { name: 'Krutrim', desc: 'Ola 创始人打造的印度语大模型' },
+          { name: 'Sarvam AI', desc: '多语言印度 LLM，支持 10+ 本土语言' },
+        ],
+        policy: 'IndiaAI Mission 2024',
+        policyTags: ['10,000 GPU 算力池', '负责任 AI', '数字公共基础设施'],
+        insight: 'IT 外包产业 AI 转型最快国家。<strong>全球最大 AI 人才净出口国</strong>，同时本土 AI 创业生态爆发，2024 年融资额翻三倍。'
+      },
+      'Singapore': {
+        flag: '🇸🇬', nameZh: '新加坡',
+        yoy: '+14pp', workforce: '74%',
+        tools: ['ChatGPT', 'Microsoft Copilot', 'Stable Diffusion', 'Claude'],
+        usecases: ['金融风控', '港口物流', '生物医药', '政府服务'],
+        companies: [
+          { name: 'SEA Group', desc: 'AI 驱动电商与金融科技' },
+          { name: 'Grab AI', desc: '东南亚最大 AI 应用场景' },
+          { name: 'AI Singapore', desc: '国家 AI 研究中心，100E 计划' },
+        ],
+        policy: 'National AI Strategy 2.0',
+        policyTags: ['AI 治理框架', '模型评测标准', 'ASEAN AI 中心'],
+        insight: '东南亚 AI 枢纽。<strong>人均 AI 算力全球第一</strong>，政府主导建立亚太最完善 AI 监管框架，大量全球 AI 公司以此为亚太总部。'
+      },
+      'China': {
+        flag: '🇨🇳', nameZh: '中国',
+        yoy: '+15pp', workforce: '76%',
+        tools: ['文心一言', 'Kimi', '通义千问', 'DeepSeek', '豆包'],
+        usecases: ['制造业质检', '电商推荐', '自动驾驶', '医疗影像'],
+        companies: [
+          { name: 'DeepSeek', desc: '2025 全球最强开源模型，震撼行业' },
+          { name: 'Moonshot / Kimi', desc: '长文本 AI，月活破亿' },
+          { name: 'ByteDance AI', desc: '豆包用户突破 1.5 亿' },
+        ],
+        policy: '新一代人工智能发展规划',
+        policyTags: ['2030 AI 强国', '大模型备案制', '数据安全法'],
+        insight: '<strong>DeepSeek-R1 以极低成本媲美 GPT-4</strong>，2025 年开源生态反超预期。国内应用侧增长迅猛，但企业 AI 渗透率受数据合规约束。'
+      },
+      'United States of America': {
+        flag: '🇺🇸', nameZh: '美国',
+        yoy: '+12pp', workforce: '68%',
+        tools: ['ChatGPT', 'Microsoft Copilot', 'GitHub Copilot', 'Cursor', 'Claude'],
+        usecases: ['软件工程', '内容创作', '法律合规', '医疗辅助'],
+        companies: [
+          { name: 'OpenAI', desc: 'ChatGPT 全球用户 4 亿+' },
+          { name: 'Anthropic', desc: 'Claude 系列，企业端增长最快' },
+          { name: 'Microsoft AI', desc: 'Copilot 嵌入 Office 全线产品' },
+        ],
+        policy: 'Executive Order on AI Safety',
+        policyTags: ['AI 安全法案', '出口管制', 'NIST 框架'],
+        insight: '全球 AI 技术策源地，但<strong>企业采用率被新兴市场反超</strong>（72% vs UAE 93%）。监管不确定性和遗留系统是主要阻力，科技行业采用率接近 100%。'
+      },
+      'United Kingdom': {
+        flag: '🇬🇧', nameZh: '英国',
+        yoy: '+10pp', workforce: '58%',
+        tools: ['ChatGPT', 'Microsoft Copilot', 'Gemini', 'GitHub Copilot'],
+        usecases: ['金融服务', '医疗 NHS', '法律科技', '媒体创作'],
+        companies: [
+          { name: 'DeepMind', desc: 'Google 旗下，AlphaFold 改变生物学' },
+          { name: 'Wayve', desc: '自动驾驶 AI，融资 10 亿美元' },
+          { name: 'Stability AI', desc: '开源图像生成先驱' },
+        ],
+        policy: 'UK AI Safety Institute',
+        policyTags: ['AI 安全峰会主办', '亲增长监管', 'NHS AI 实验室'],
+        insight: '欧洲 AI 研究中心，<strong>DeepMind 等顶尖实验室</strong>驻扎伦敦。NHS 是全球最大医疗 AI 试验场，但脱欧影响人才流入。'
+      },
+      'Germany': {
+        flag: '🇩🇪', nameZh: '德国',
+        yoy: '+8pp', workforce: '51%',
+        tools: ['Microsoft Copilot', 'ChatGPT', 'SAP AI', 'GitHub Copilot'],
+        usecases: ['工业制造', '汽车研发', 'ERP 集成', '供应链优化'],
+        companies: [
+          { name: 'SAP AI', desc: '企业 ERP AI 化，覆盖全球 40 万客户' },
+          { name: 'Aleph Alpha', desc: '欧洲主权 AI 代表，获政府背书' },
+          { name: 'Siemens AI', desc: '工业 AI 全球领导者' },
+        ],
+        policy: 'KI-Strategie 2023',
+        policyTags: ['工业 AI', 'GDPR 合规', '主权 AI 优先'],
+        insight: '制造业 AI 应用全球领先，但<strong>整体采用率受严格数据法规制约</strong>。中型企业（Mittelstand）AI 转型缓慢是最大短板。'
+      },
+      'Brazil': {
+        flag: '🇧🇷', nameZh: '巴西',
+        yoy: '+20pp', workforce: '71%',
+        tools: ['ChatGPT', 'Google Gemini', 'Copilot', 'DALL-E'],
+        usecases: ['金融科技', '农业精准化', '政府服务', '法律辅助'],
+        companies: [
+          { name: 'Nubank AI', desc: '拉美最大数字银行 AI 风控' },
+          { name: 'Totvs AI', desc: '巴西最大企业软件商 AI 化' },
+          { name: 'Embrapa', desc: 'AI 驱动农业研究，全球领先' },
+        ],
+        policy: 'Estratégia Brasileira de IA',
+        policyTags: ['AI 国家战略', '农业 AI', '金融科技监管沙盒'],
+        insight: '<strong>拉美 AI 采用率最高国家</strong>，金融科技与农业 AI 双引擎驱动。Pix 支付数据优势使金融 AI 全球独特，年轻人口结构加速渗透。'
+      },
+      'Nigeria': {
+        flag: '🇳🇬', nameZh: '尼日利亚',
+        yoy: '+19pp', workforce: '63%',
+        tools: ['ChatGPT', 'Google Gemini', 'Canva AI', 'Midjourney'],
+        usecases: ['金融普惠', '农业指导', '教育获取', '内容创作'],
+        companies: [
+          { name: 'Flutterwave', desc: '非洲最大支付平台，AI 风控' },
+          { name: 'Farmcrowdy', desc: 'AI 农业保险与融资' },
+          { name: 'uLesson', desc: 'AI 个性化教育平台' },
+        ],
+        policy: 'NITDA AI Policy 2023',
+        policyTags: ['金融普惠 AI', '非洲 AI 领导力', 'Lagos Tech Hub'],
+        insight: '<strong>非洲 AI 创业之都拉各斯</strong>，年轻化人口（中位年龄 18 岁）推动移动端 AI 爆发。金融普惠场景全球独特，银行账户渗透低反而加速 AI 金融跳跃。'
+      },
+      'Japan': {
+        flag: '🇯🇵', nameZh: '日本',
+        yoy: '+9pp', workforce: '47%',
+        tools: ['ChatGPT', 'Microsoft Copilot', 'LINE AI', 'GitHub Copilot'],
+        usecases: ['制造质检', '文件处理', '翻译辅助', '客服机器人'],
+        companies: [
+          { name: 'SoftBank AI', desc: '孙正义押注 AGI，大规模算力投资' },
+          { name: 'Preferred Networks', desc: '日本顶尖 AI 研究，丰田合作' },
+          { name: 'Rakuten AI', desc: '电商与金融 AI 一体化' },
+        ],
+        policy: 'Japan AI Strategy 2025',
+        policyTags: ['AI 友好监管', '开源优先', '少子化 AI 对策'],
+        insight: '采用率在 G7 中垫底，根因是<strong>企业文化保守、传真机仍在用</strong>。但 2024 年起政府推动"DX"转型，制造业 AI 应用快速补课。'
+      },
+      'South Korea': {
+        flag: '🇰🇷', nameZh: '韩国',
+        yoy: '+13pp', workforce: '74%',
+        tools: ['ChatGPT', 'Naver HyperCLOVA', 'Kakao AI', 'Copilot'],
+        usecases: ['半导体设计', '游戏开发', 'K-内容创作', '医疗诊断'],
+        companies: [
+          { name: 'Naver AI', desc: 'HyperCLOVA X，韩语最强大模型' },
+          { name: 'Kakao AI', desc: 'KoGPT + 超级 App AI 生态' },
+          { name: 'Samsung AI', desc: '端侧 AI 手机全球出货量第一' },
+        ],
+        policy: 'AI 일류국가 전략',
+        policyTags: ['2027 AI 一流国家', '半导体 AI 融合', 'K-AI 出口战略'],
+        insight: '三星、SK 海力士支撑全球 AI 芯片供应链。<strong>Naver HyperCLOVA</strong> 是少数能与 GPT-4 抗衡的非英语大模型，K-内容创作 AI 化全球最快。'
+      },
+      'France': {
+        flag: '🇫🇷', nameZh: '法国',
+        yoy: '+11pp', workforce: '60%',
+        tools: ['ChatGPT', 'Mistral', 'Microsoft Copilot', 'Gemini'],
+        usecases: ['奢侈品设计', '核能管理', '政府服务', '教育'],
+        companies: [
+          { name: 'Mistral AI', desc: '欧洲最强开源大模型，估值 60 亿美元' },
+          { name: 'Hugging Face', desc: 'AI 开源社区全球第一，总部巴黎' },
+          { name: 'BNP Paribas AI', desc: '欧洲最大银行 AI 转型' },
+        ],
+        policy: 'France 2030 - IA',
+        policyTags: ['主权 AI', '开源优先', '2 亿欧元 AI 基金'],
+        insight: '<strong>Mistral AI + Hugging Face</strong> 使法国成为欧洲 AI 技术的旗帜。马克龙主导"AI 冠军企业"战略，试图在欧盟严格监管内开辟创新空间。'
+      },
+      'Saudi Arabia': {
+        flag: '🇸🇦', nameZh: '沙特阿拉伯',
+        yoy: '+16pp', workforce: '73%',
+        tools: ['ChatGPT', 'Microsoft Copilot', 'Gemini', 'SDAIA Tools'],
+        usecases: ['石油勘探', '智慧城市 NEOM', '金融服务', '政府数字化'],
+        companies: [
+          { name: 'NEOM AI', desc: '1000 亿美元未来城市 AI 基础设施' },
+          { name: 'Aramco AI', desc: '全球最大石油公司 AI 优化' },
+          { name: 'STC Group AI', desc: '中东最大电信 AI 生态' },
+        ],
+        policy: 'National AI Strategy + Vision 2030',
+        policyTags: ['Vision 2030', '非油经济 AI', '500 亿美元 AI 投资'],
+        insight: '<strong>Vision 2030 将 AI 列为核心支柱</strong>，NEOM 智慧城市是全球最大 AI 城市建设项目。正成为中东 AI 投资枢纽，与中美两国均保持深度合作。'
+      },
+      'Australia': {
+        flag: '🇦🇺', nameZh: '澳大利亚',
+        yoy: '+11pp', workforce: '61%',
+        tools: ['ChatGPT', 'Microsoft Copilot', 'GitHub Copilot', 'Canva AI'],
+        usecases: ['矿业勘探', '农业精准化', '金融服务', '医疗辅助'],
+        companies: [
+          { name: 'Canva AI', desc: '设计 AI 全球独角兽，用户 1.8 亿' },
+          { name: 'Atlassian AI', desc: '企业协作 AI，Jira/Confluence 集成' },
+          { name: 'Commonwealth Bank AI', desc: '银行 AI 风控全球标杆' },
+        ],
+        policy: 'Australia AI Ethics Framework',
+        policyTags: ['AI 伦理领先', '负责任 AI', 'AUKUS AI 合作'],
+        insight: '<strong>Canva 是全球最成功的 AI 设计工具</strong>，澳大利亚人均使用 AI 创作工具比例全球第一。矿业和农业 AI 应用为独特优势，人均 GDP 高支撑企业投入。'
+      },
+      'Israel': {
+        flag: '🇮🇱', nameZh: '以色列',
+        yoy: '+12pp', workforce: '71%',
+        tools: ['ChatGPT', 'GitHub Copilot', 'Claude', 'Gemini'],
+        usecases: ['网络安全', '军事 AI', '医疗成像', '农业科技'],
+        companies: [
+          { name: 'Check Point AI', desc: '网络安全 AI 全球第一' },
+          { name: 'Mobileye', desc: '自动驾驶视觉 AI，英特尔旗下' },
+          { name: 'Wiz', desc: '云安全 AI，估值 120 亿美元' },
+        ],
+        policy: 'Israel National AI Plan',
+        policyTags: ['军民两用 AI', '网络安全 AI', 'AI 创业生态'],
+        insight: '<strong>人均 AI 独角兽数量全球第一</strong>（"创业国度"）。军队（Unit 8200）技术转民用传统造就最强安全 AI 生态，Wiz 等公司估值超越同期美国竞品。'
+      },
+      'South Africa': {
+        flag: '🇿🇦', nameZh: '南非',
+        yoy: '+14pp', workforce: '57%',
+        tools: ['ChatGPT', 'Google Gemini', 'Microsoft Copilot', 'Canva AI'],
+        usecases: ['金融普惠', '医疗远程', '矿业安全', '零售分析'],
+        companies: [
+          { name: 'Naspers / Prosus', desc: '非洲最大科技投资集团' },
+          { name: 'Standard Bank AI', desc: '非洲最大银行 AI 风控' },
+          { name: 'Aerobotics', desc: 'AI 农业无人机，覆盖 50+ 国' },
+        ],
+        policy: 'SA AI National Strategy 2022',
+        policyTags: ['非洲 AI 领导者', 'AI 技能培训', '包容性 AI'],
+        insight: '<strong>非洲 AI 生态最成熟国家</strong>，约翰内斯堡是跨国 AI 公司非洲总部首选。但高失业率（33%）与 AI 就业冲击形成张力，政府主导 AI 再培训计划。'
+      },
+      'Mexico': {
+        flag: '🇲🇽', nameZh: '墨西哥',
+        yoy: '+16pp', workforce: '60%',
+        tools: ['ChatGPT', 'Google Gemini', 'Microsoft Copilot', 'Canva AI'],
+        usecases: ['制造近岸外包', '金融科技', '零售电商', '农业'],
+        companies: [
+          { name: 'Konfio', desc: 'AI 驱动中小企业贷款' },
+          { name: 'Clip', desc: 'AI 支付终端，覆盖 300 万商户' },
+          { name: 'Bedu', desc: 'AI 技术教育平台' },
+        ],
+        policy: 'Estrategia Nacional de IA',
+        policyTags: ['近岸制造 AI', '金融普惠', 'AI 技能培训'],
+        insight: '美墨近岸制造（Nearshoring）热潮推动<strong>制造业 AI 采用量跳升</strong>。与美国供应链深度整合，Tesla、BMW 等工厂 AI 应用带动本土生态成熟。'
+      },
+    };
+
+    // ── Chinese Name Map ──
+    const ZH_NAMES = {
+      // Asia-Pacific
+      'India': '印度', 'Singapore': '新加坡', 'China': '中国',
+      'South Korea': '韩国', 'Indonesia': '印度尼西亚', 'Thailand': '泰国',
+      'Vietnam': '越南', 'Philippines': '菲律宾', 'Malaysia': '马来西亚',
+      'Pakistan': '巴基斯坦', 'Bangladesh': '孟加拉国', 'Japan': '日本',
+      'Australia': '澳大利亚', 'New Zealand': '新西兰', 'Myanmar': '缅甸',
+      'Cambodia': '柬埔寨', 'Sri Lanka': '斯里兰卡', 'Nepal': '尼泊尔',
+      'Mongolia': '蒙古', 'Kazakhstan': '哈萨克斯坦', 'Uzbekistan': '乌兹别克斯坦',
+      'Azerbaijan': '阿塞拜疆',
+      // Middle East
+      'Saudi Arabia': '沙特阿拉伯', 'United Arab Emirates': '阿联酋',
+      'Israel': '以色列', 'Turkey': '土耳其', 'Iran': '伊朗',
+      'Iraq': '伊拉克', 'Jordan': '约旦', 'Kuwait': '科威特',
+      'Qatar': '卡塔尔', 'Oman': '阿曼',
+      // Europe
+      'United Kingdom': '英国', 'Germany': '德国', 'France': '法国',
+      'Sweden': '瑞典', 'Netherlands': '荷兰', 'Spain': '西班牙',
+      'Italy': '意大利', 'Poland': '波兰', 'Russia': '俄罗斯',
+      'Ukraine': '乌克兰', 'Norway': '挪威', 'Denmark': '丹麦',
+      'Finland': '芬兰', 'Switzerland': '瑞士', 'Austria': '奥地利',
+      'Belgium': '比利时', 'Portugal': '葡萄牙', 'Czech Republic': '捷克',
+      'Romania': '罗马尼亚', 'Hungary': '匈牙利', 'Greece': '希腊',
+      'Serbia': '塞尔维亚', 'Croatia': '克罗地亚', 'Slovakia': '斯洛伐克',
+      'Bulgaria': '保加利亚',
+      // Americas
+      'United States of America': '美国', 'Canada': '加拿大',
+      'Mexico': '墨西哥', 'Brazil': '巴西', 'Argentina': '阿根廷',
+      'Colombia': '哥伦比亚', 'Chile': '智利', 'Peru': '秘鲁',
+      'Venezuela': '委内瑞拉', 'Ecuador': '厄瓜多尔', 'Bolivia': '玻利维亚',
+      'Paraguay': '巴拉圭', 'Uruguay': '乌拉圭', 'Guatemala': '危地马拉',
+      'Costa Rica': '哥斯达黎加',
+      // Africa
+      'South Africa': '南非', 'Nigeria': '尼日利亚', 'Egypt': '埃及',
+      'Kenya': '肯尼亚', 'Ethiopia': '埃塞俄比亚', 'Tanzania': '坦桑尼亚',
+      'Ghana': '加纳', 'Morocco': '摩洛哥', 'Algeria': '阿尔及利亚',
+      'Tunisia': '突尼斯', 'Cameroon': '喀麦隆', 'Senegal': '塞内加尔',
+      'Mozambique': '莫桑比克', 'Madagascar': '马达加斯加', 'Zimbabwe': '津巴布韦',
+      'Zambia': '赞比亚', 'Angola': '安哥拉', 'Sudan': '苏丹',
+      'Ivory Coast': '科特迪瓦',
+    };
+
+    // ── Panel Logic ──
+    function closePanel() {
+      document.getElementById('detail-panel').classList.remove('open');
+    }
+
+    function renderPanel(name, value) {
+      const panel = document.getElementById('detail-panel');
+      const d = countryDetail[name];
+
+      document.getElementById('panel-flag').textContent = d ? d.flag : '🌍';
+      document.getElementById('panel-name').textContent = d ? d.nameZh : (ZH_NAMES[name] || name);
+
+      const body = document.getElementById('panel-body');
+
+      if (!d) {
+        // No detailed data
+        const rankArr = [...data].sort((a, b) => b.value - a.value);
+        const rank = value ? (rankArr.findIndex(x => x.name === name) + 1) : '—';
+        body.innerHTML = `
+          <div class="rate-hero">
+            <div class="rate-big" style="color:${value >= 65 ? '#60a5fa' : value >= 50 ? '#f59e0b' : '#475569'}">${value != null ? value + '%' : 'N/A'}</div>
+            <div class="rate-meta">
+              <div class="rate-label">企业 AI 采用率</div>
+              ${value != null ? `<div class="rate-rank">全球第 ${rank} 位</div>` : ''}
+            </div>
+          </div>
+          ${value != null ? `<div class="rate-bar-wrap"><div class="rate-bar-fill" style="width:${Math.min(value,100)}%"></div></div>` : ''}
+          <div class="no-data-state">
+            <div class="icon">📊</div>
+            <p>该国家详细数据<br>正在整理中</p>
+          </div>`;
+        panel.classList.add('open');
+        return;
+      }
+
+      const rankArr = [...data].sort((a, b) => b.value - a.value);
+      const rank = rankArr.findIndex(x => x.name === name) + 1;
+      const badgeClass = value >= 65 ? 'badge-hot' : value >= 50 ? 'badge-mid' : 'badge-low';
+      const badgeText = value >= 65 ? '🔥 高渗透' : value >= 50 ? '📈 增长中' : '⬆ 上升中';
+      const rateColor = value >= 65 ? '#60a5fa' : value >= 50 ? '#f59e0b' : '#94a3b8';
+
+      body.innerHTML = `
+        <div class="rate-hero">
+          <div class="rate-big" style="color:${rateColor}">${value}%</div>
+          <div class="rate-meta">
+            <div class="rate-label">企业 AI 采用率 · 2025</div>
+            <div class="rate-rank">全球第 ${rank} 位 · 同比 ${d.yoy}</div>
+            <span class="rate-badge ${badgeClass}">${badgeText}</span>
+          </div>
+        </div>
+        <div class="rate-bar-wrap">
+          <div class="rate-bar-fill" style="width:${Math.min(value,100)}%;background:${rateColor}"></div>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-item">
+            <div class="metric-val">${d.yoy}</div>
+            <div class="metric-key">同比增长</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-val">${d.workforce}</div>
+            <div class="metric-key">员工日常使用率</div>
+          </div>
+        </div>
+
+        <div class="section-title">主流 AI 工具</div>
+        <div class="tag-row">
+          ${d.tools.map(t => `<span class="tag tool">${t}</span>`).join('')}
+        </div>
+
+        <div class="section-title">核心应用场景</div>
+        <div class="tag-row">
+          ${d.usecases.map(u => `<span class="tag usecase">${u}</span>`).join('')}
+        </div>
+
+        <div class="section-title">代表性企业 / 项目</div>
+        <ul class="company-list">
+          ${d.companies.map(c => `<li><span class="company-name">${c.name}</span> — ${c.desc}</li>`).join('')}
+        </ul>
+
+        <div class="section-title">政策与战略</div>
+        <div class="tag-row" style="margin-bottom:8px">
+          <span class="tag policy">📋 ${d.policy}</span>
+        </div>
+        <div class="tag-row">
+          ${d.policyTags.map(p => `<span class="tag policy">${p}</span>`).join('')}
+        </div>
+
+        <div class="insight-box">${d.insight}</div>
+      `;
+
+      panel.classList.add('open');
+    }
+
+    // Click handler
+    chart.on('click', function(params) {
+      if (params.componentType === 'series') {
+        renderPanel(params.name, params.value);
+      }
+    });
+
+    // Close on map background click
+    chart.getZr().on('click', function(event) {
+      if (!event.target) {
+        closePanel();
+      }
+    });
+
+    // Update tooltip hint
+    document.querySelector('.tooltip-hint').textContent = '滚轮缩放 · 拖拽移动 · 点击国家查看详情';
+  </script>
+</body>
+</html>

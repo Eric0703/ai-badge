@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The First Letter · Moxt</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lora:wght@400;500;600;700&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    /* Moxt Brand Green Scale (hsl 148°) */
+    --green-50:  #EEFAF3;
+    --green-100: #D2F2E1;
+    --green-200: #A3E4C2;
+    --green-300: #5FCC8E;
+    --green-400: #35B96F;
+    --green-500: #29C16A;  /* Primary */
+    --green-600: #1F9C53;
+    --green-700: #1A7D43;
+    --green-800: #145E33;
+    --green-900: #0F3E22;
+
+    /* Slate Neutrals */
+    --slate-50:  #FAFAFB;
+    --slate-100: #F4F5F7;
+    --slate-200: #E6E8EB;
+    --slate-300: #D0D3D8;
+    --slate-400: #959DAB;
+    --slate-500: #657080;
+    --slate-600: #454B55;
+    --slate-700: #31353B;
+    --slate-800: #1C1E22;
+
+    /* Semantic */
+    --bg-primary: #FFFFFF;
+    --bg-warm:    #F6F5F3;
+    --text-primary: var(--slate-800);
+    --text-secondary: var(--slate-600);
+    --text-tertiary: var(--slate-400);
+    --border: var(--slate-200);
+    --accent: var(--green-500);
+    --accent-hover: var(--green-600);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.7;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 48px; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 80px 0 64px;
+    position: relative;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--green-700);
+    background: var(--green-50);
+    border: 1px solid var(--green-100);
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 28px;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .hero h1 {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 52px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--green-500), var(--green-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-greeting {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.85;
+  }
+  .hero-greeting strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .hero-divider {
+    width: 48px; height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin: 32px 0;
+    opacity: 0.6;
+  }
+
+  /* ── Section ── */
+  .section {
+    padding: 72px 0;
+    border-top: 1px solid var(--border);
+  }
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 12px;
+  }
+  .section-num {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--green-300);
+    flex-shrink: 0;
+    margin-top: 4px;
+    user-select: none;
+  }
+  .section-header-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .section-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 2px;
+  }
+  .section-title {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    color: var(--text-primary);
+  }
+  .section-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin-bottom: 28px;
+  }
+
+  /* ── Image Card ── */
+  .img-card {
+    width: 100%;
+    border-radius: 0;
+    overflow: hidden;
+    border: none;
+    margin-bottom: 24px;
+    background: transparent;
+    position: relative;
+  }
+  .img-card img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 16 / 8;
+    object-fit: cover;
+  }
+  .img-card-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40%;
+    background: none;
+    pointer-events: none;
+  }
+
+  /* ── Insight Cards ── */
+  .insight-grid {
+    display: grid;
+    gap: 12px;
+  }
+  .insight-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .insight-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .insight-card {
+    background: var(--slate-50);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.2s ease;
+  }
+  .insight-card:hover {
+    border-color: var(--slate-400);
+    background: var(--slate-100);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .insight-card.accent {
+    background: var(--green-50);
+    border-color: var(--green-200);
+  }
+  .insight-card.accent:hover {
+    border-color: var(--green-400);
+    background: var(--green-100);
+    box-shadow: 0 2px 8px rgba(41, 193, 106, 0.08);
+  }
+
+  .insight-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+  }
+  .insight-card.accent .insight-label { color: var(--green-700); }
+  .insight-text {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .insight-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .insight-card.accent .insight-text { color: var(--green-800); }
+  .insight-card.accent .insight-text strong { color: var(--green-900); }
+
+  /* ── Quote ── */
+  .quote {
+    position: relative;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-radius: 12px;
+    background: var(--slate-50);
+    border: none;
+  }
+  .quote::before {
+    content: '"';
+    position: absolute;
+    top: 10px; left: 14px;
+    font-size: 32px;
+    color: var(--slate-300);
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .quote-text {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    line-height: 1.7;
+    padding-left: 20px;
+  }
+
+  /* ── Action Bar ── */
+  .action-section {
+    margin-top: 32px;
+  }
+  .action-label {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .action-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 9px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+  }
+  .action-link:hover {
+    border-color: var(--slate-400);
+    background: var(--slate-100);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+  }
+  .action-link.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .action-link.primary:hover {
+    background: var(--green-700);
+    border-color: var(--green-700);
+    box-shadow: 0 4px 12px rgba(41, 193, 106, 0.2);
+    transform: translateY(-1px);
+  }
+  .action-link .arr {
+    font-size: 11px;
+    opacity: 0.6;
+    transition: transform 0.15s;
+  }
+  .action-link:hover .arr { transform: translateX(2px); }
+
+  /* ── Showcase Grid ── */
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .showcase-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: var(--bg-primary);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .showcase-card:hover {
+    border-color: var(--green-500);
+    background: var(--green-500);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(41, 193, 106, 0.22);
+  }
+  .showcase-icon {
+    width: 32px; height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .showcase-icon svg {
+    width: 28px; height: 28px;
+    transition: all 0.3s ease;
+  }
+  .showcase-card:hover .showcase-icon svg [stroke="#31353B"] { stroke: #FFFFFF; }
+  .showcase-card:hover .showcase-icon svg [stroke="#29C16A"] { stroke: #FFFFFF; }
+  .showcase-card:hover .showcase-icon svg [fill="#31353B"] { fill: #FFFFFF; }
+  .showcase-card:hover .showcase-icon svg [fill="#29C16A"] { fill: #FFFFFF; }
+  .showcase-card:hover .showcase-icon svg [fill="#D0D3D8"] { fill: rgba(255,255,255,0.45); }
+  .showcase-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+    transition: color 0.3s ease;
+  }
+  .showcase-card:hover .showcase-title {
+    color: #FFFFFF;
+  }
+
+  /* ── Convo List ── */
+  .convo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 20px 0;
+  }
+  .convo-item {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    padding: 14px 18px 14px 44px;
+    background: var(--slate-50);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .convo-item::before {
+    content: '→';
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── Closing ── */
+  .closing {
+    padding: 64px 0 96px;
+    border-top: 1px solid var(--border);
+  }
+  .closing-text {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.9;
+  }
+  .closing-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .closing-sig { margin-top: 40px; }
+  .closing-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .closing-role {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  .closing-footer {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-tertiary);
+    line-height: 1.6;
+  }
+
+  code {
+    font-size: 12px;
+    background: var(--green-50);
+    color: var(--green-700);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 1024px) {
+    .container { max-width: 100%; padding: 0 40px; }
+  }
+  @media (max-width: 768px) {
+    .container { padding: 0 28px; }
+    .hero { padding: 64px 0 52px; }
+    .hero h1 { font-size: 36px; }
+    .section { padding: 56px 0; }
+    .section-num { font-size: 48px; margin-top: 2px; }
+    .section-title { font-size: 26px; }
+    .section-header { gap: 16px; }
+    .insight-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+    .showcase-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .container { padding: 0 20px; }
+    .hero { padding: 48px 0 40px; }
+    .hero h1 { font-size: 30px; }
+    .section { padding: 48px 0; }
+    .section-num { font-size: 40px; margin-top: 0; }
+    .section-title { font-size: 22px; }
+    .section-header { gap: 12px; }
+    .insight-grid.cols-2,
+    .insight-grid.cols-3 { grid-template-columns: 1fr; }
+    .showcase-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ Hero ═══ -->
+<div class="container">
+  <div class="hero">
+    <img src="https://static.moxtcontent.com/public/resource/ai/gen/936b24cb-6f63-40d3-8f93-9443433a8057.png" alt="Moxt" style="height: 32px; width: auto; margin-bottom: 28px; display: block;" />
+    <h1>欢迎来到<br><span>AI 原生的工作空间</span></h1>
+    <div class="hero-divider"></div>
+    <p class="hero-greeting">
+      Hi，见字如面。<br><br>
+      AI Agents 的迅速发展，让一件事变得清晰：每一家公司，都将很快拥有比人类员工多出数百倍的 AI 员工。它们不通过软件界面点击按钮，而是调用 API、读写文件、彼此沟通。<br><br>
+      人与 AI，需要一个新的地方一起工作。<strong>Moxt，就是这样一个 AI 原生的工作空间。</strong>
+    </p>
+  </div>
+</div>
+
+<!-- ═══ Sections ═══ -->
+<div class="container">
+
+  <!-- 01 More Context -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-header-text">
+        <div class="section-tag">Core</div>
+        <div class="section-title">Moxt = More Context</div>
+      </div>
+    </div>
+    <p class="section-desc">你试过让 AI 读你们公司的文档吗？它大概能回答问题——但又像没真正懂你的业务。Moxt 围绕一个理念：从 AI 的角度出发，为 AI 同事提供更好的工作环境。</p>
+
+    <div class="img-card">
+      <img src="https://static.moxtcontent.com/public/resource/ai/gen/10880281-3bbf-47d8-95d8-688fa96a30c8.jpeg" alt="More Context — 人与 AI 同事在文件图书馆中协作" />
+      <div class="img-card-overlay"></div>
+    </div>
+
+    <div class="insight-grid cols-3">
+      <div class="insight-card accent">
+        <div class="insight-label">第一件事</div>
+        <div class="insight-text"><strong>让 AI 在它的母语里工作。</strong><br>PDF、Word、PPT，AI 读这些就像人类在读一份扫描了三次的传真。在 Moxt，所有内容都转换成 <code>.md</code>、<code>.csv</code>、<code>.html</code> 等 AI 完全理解的格式，代码也可无缝接入。</div>
+      </div>
+      <div class="insight-card accent">
+        <div class="insight-label">第二件事</div>
+        <div class="insight-text"><strong>让 AI 在熟悉的图书馆里工作。</strong><br>文件系统，一层层目录，一个个文件，是 AI 训练时最熟悉的知识组织方式。AI 在 Moxt 中导航，就像在自己最熟悉的环境找东西。</div>
+      </div>
+      <div class="insight-card accent">
+        <div class="insight-label">第三件事</div>
+        <div class="insight-text"><strong>让 AI 都有自己的云端电脑。</strong><br>Moxt 中的每一位 AI 同事都能随时运行云端电脑：打开浏览器、读写文件、运行代码，把任务从头做到尾。它们不只是在完成任务，而是和你一起共建这个工作空间。</div>
+      </div>
+    </div>
+
+    <div class="quote" style="margin-top: 16px;">
+      <div class="quote-text">当这三件事同时达成，魔法自然浮现。以下可以成为你在 Moxt 中日常的对话——</div>
+    </div>
+
+    <div class="convo-list">
+      <div class="convo-item">"这周五要和老用户复盘，他们当时入场有三个顾虑——你还记得吗？这几个月我们为他们做了哪些事？"</div>
+      <div class="convo-item">"我刚看到竞品发了定价调整公告，结合我们上个月的讨论，你觉得对我们的策略有什么影响？"</div>
+      <div class="convo-item">"你可以去看看未来一个月产品要发布哪些新功能，为我草拟一份品牌营销方案吗？"</div>
+    </div>
+
+    <div class="action-section">
+      <div class="action-label">准备好让 AI 读懂你的业务了吗？</div>
+      <div class="action-links">
+        <a class="action-link primary" href="javascript:void(0)" onclick="gotoFile('./导入和协同/从 Notion 和 Google Drive 迁入.md')">从 Notion / Google Drive 迁入<span class="arr">→</span></a>
+        <a class="action-link" href="javascript:void(0)" onclick="gotoFile('./导入和协同/接入外部工具.md')">接入 Slack 和 GitHub<span class="arr">→</span></a>
+        <a class="action-link" href="javascript:void(0)" onclick="gotoFile('./导入和协同/邀请你的同事一起来.md')">邀请团队成员<span class="arr">→</span></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 momo -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-header-text">
+        <div class="section-tag">Your AI</div>
+        <div class="section-title">You are not limited by yourself now.</div>
+      </div>
+    </div>
+    <p class="section-desc">纳瓦尔说，杠杆是一切伟大成就的底层。momo，是你专属的新型杠杆。</p>
+
+    <div class="img-card">
+      <img src="https://static.moxtcontent.com/public/resource/ai/gen/43e179a6-4138-4a0d-b791-178e22579044.jpeg" alt="momo — 你的贴身 AI 参谋" />
+      <div class="img-card-overlay"></div>
+    </div>
+
+    <div class="insight-grid cols-3">
+      <div class="insight-card">
+        <div class="insight-label">永远在线</div>
+        <div class="insight-text">没有时间和精力的上限，可以并行处理很多事。</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-label">完全了解你</div>
+        <div class="insight-text">阅读你所有文档，记着每一次决策。给它一件事，不用解释背景——它已经有了。</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-label">放大你的判断</div>
+        <div class="insight-text">你的标准、偏好、品味——通过 momo 放大成更大的输出和影响。</div>
+      </div>
+    </div>
+
+    <div class="insight-grid cols-2" style="margin-top: 12px;">
+      <div class="insight-card accent">
+        <div class="insight-label">会上网，懂外部世界</div>
+        <div class="insight-text">momo 可以自己进行外部搜索，主动查资料、追踪动态。必要时可以接管你的浏览器。填表、查询、导出，你吩咐就行。</div>
+      </div>
+      <div class="insight-card accent">
+        <div class="insight-label">越用越强，沉淀成 Skill</div>
+        <div class="insight-text">momo 把积累的判断整理成 Skill，形成你 Workspace 专有的能力库。共事越久，它越强。</div>
+      </div>
+    </div>
+
+    <div class="quote" style="margin-top: 16px;">
+      <div class="quote-text">momo 是你思想和品味的放大器，从此你不再受限于一个人的时间精力。你可以日常和 momo 这样对话。</div>
+    </div>
+
+    <div class="convo-list">
+      <div class="convo-item">每天早上向我总结所有新变化。</div>
+      <div class="convo-item">把我的零散笔记整理成团队文档。</div>
+      <div class="convo-item">主动搜索行业动态，有重要信号提前告知。</div>
+    </div>
+
+    <div class="action-section">
+      <div class="action-label">想看看 momo 能帮你做什么？</div>
+      <div class="action-links">
+        <a class="action-link" href="javascript:void(0)" onclick="gotoFile('./Momo 使用指南.md')">Momo 使用指南<span class="arr">→</span></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 Less is More -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-header-text">
+        <div class="section-tag">Entropy</div>
+        <div class="section-title">Less is more.</div>
+      </div>
+    </div>
+    <p class="section-desc">一家成立三年的公司，共享文件夹里是什么样的？如果只留下真正需要的，也许不足 5%。</p>
+
+    <div class="img-card">
+      <img src="https://static.moxtcontent.com/public/resource/ai/gen/f571351b-4858-401b-bb10-37268fd8fb18.jpeg" alt="熵减 — AI 把混乱文档整理成清晰有序的知识库" />
+      <div class="img-card-overlay"></div>
+    </div>
+
+    <div class="insight-grid cols-2">
+      <div class="insight-card">
+        <div class="insight-label">问题所在</div>
+        <div class="insight-text">组织只要在成长，就一定会不断熵增。当 Workspace 充满过时信息，即使是 AI，也无法理解你业务真实的状态。</div>
+      </div>
+      <div class="insight-card accent">
+        <div class="insight-label">Moxt 的方案</div>
+        <div class="insight-text">Moxt 是可以原生熵减的 Workspace。AI 同事理解所有文档和文件结构，从全局出发让内容始终保持精简和真实。</div>
+      </div>
+    </div>
+
+    <div class="quote" style="margin-top: 16px;">
+      <div class="quote-text">从此只称「用户」不称「客户」——AI 同事找出所有相关内容完成更新，不只是替换词，是读懂业务之后的一次全局校准。</div>
+    </div>
+
+    <div class="action-section">
+      <div class="action-label">认识你的首位 AI 同事？</div>
+      <div class="action-links">
+        <a class="action-link primary" href="javascript:void(0)" onclick="gotoFile('./更多玩法/上手配置 · 从熵减官开始.md')">上手配置 · 从熵减官开始<span class="arr">→</span></a>
+        <a class="action-link" href="javascript:void(0)" onclick="gotoFile('./AI 同事使用指南.md')">AI 同事使用指南<span class="arr">→</span></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 Think Different -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-header-text">
+        <div class="section-tag">Thinking</div>
+        <div class="section-title">Think More. Think Different.</div>
+      </div>
+    </div>
+    <p class="section-desc">5 Whys 是丰田提出的经典思考框架——遇到问题，连问五次「为什么」，从表象找到真因。这是现代管理学的圣经条例，但真正用起来的组织少之又少。</p>
+
+    <div class="img-card">
+      <img src="https://static.moxtcontent.com/public/resource/ai/gen/f4c34c7a-79b6-4464-a3a4-f2d977257db0.jpeg" alt="Think More — 人与 AI 一起追问五个为什么" />
+      <div class="img-card-overlay"></div>
+    </div>
+
+    <div class="insight-grid cols-2">
+      <div class="insight-card">
+        <div class="insight-label">为什么难</div>
+        <div class="insight-text">深度思考需要时间，需要足够的信息，还得凑齐所有能回答你下一个问题的人。</div>
+      </div>
+      <div class="insight-card accent">
+        <div class="insight-label">在 Moxt，这个门槛消失了</div>
+        <div class="insight-text">momo 就在旁边，陪你发散，陪你整理，陪你追问。对文档中任意内容，你可以划词引用直接追问，momo 接手处理。</div>
+      </div>
+    </div>
+
+    <div class="quote" style="margin-top: 16px;">
+      <div class="quote-text">你的直觉是起点，它把这一小步放大成真正有价值的洞察。</div>
+    </div>
+
+    <div class="action-section">
+      <div class="action-label">用 AI 陪你做一次深度思考。</div>
+      <div class="action-links">
+        <a class="action-link primary" href="javascript:void(0)" onclick="gotoFile('./更多玩法/10 件值得追问的反常识.md')">亲身体验 AI 同事的思维方式 <span class="arr">→</span></a>
+        <a class="action-link" href="javascript:void(0)" onclick="gotoFile('../System/Skills/Skill 使用指南.md')">已经内置的 Skill 查看<span class="arr">→</span></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 Visualization -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-header-text">
+        <div class="section-tag">Visualize</div>
+        <div class="section-title">可视化你想要的一切</div>
+      </div>
+    </div>
+    <p class="section-desc">这个世界为什么有软件？软件是为"人执行过程"而造的。但在 Moxt，执行是 AI 同事的事。你只需要告诉 momo 你想看到什么。</p>
+
+    <div class="img-card">
+      <img src="https://static.moxtcontent.com/public/resource/ai/gen/bfdc9af2-80b6-48ad-8802-8b31ebf6b55c.jpeg" alt="可视化 — AI 实时生成的数据报表和看板" />
+      <div class="img-card-overlay"></div>
+    </div>
+
+    <div class="showcase-grid">
+      <!-- 1. AI Customer Service Bot -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/AI-Customer-Service-Bot.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8l-4 4V6z" stroke="#31353B" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="12" r="1.5" fill="#29C16A"/><circle cx="14" cy="12" r="1.5" fill="#29C16A"/><circle cx="18" cy="12" r="1.5" fill="#D0D3D8"/></svg></div>
+        <div class="showcase-title">AI Customer Service</div>
+      </a>
+      <!-- 2. AI Prospecting Engine -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/AI-Prospecting-Engine.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="10" stroke="#31353B" stroke-width="1.6"/><circle cx="14" cy="14" r="5" stroke="#D0D3D8" stroke-width="1.2" stroke-dasharray="2.5 2"/><circle cx="14" cy="14" r="2" fill="#29C16A"/><line x1="14" y1="4" x2="14" y2="7" stroke="#31353B" stroke-width="1.6" stroke-linecap="round"/><line x1="14" y1="21" x2="14" y2="24" stroke="#31353B" stroke-width="1.6" stroke-linecap="round"/><line x1="4" y1="14" x2="7" y2="14" stroke="#31353B" stroke-width="1.6" stroke-linecap="round"/><line x1="21" y1="14" x2="24" y2="14" stroke="#31353B" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="showcase-title">AI Prospecting Engine</div>
+      </a>
+      <!-- 3. Content Calendar -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/Content Calendar.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="22" height="20" rx="2" stroke="#31353B" stroke-width="1.6"/><line x1="3" y1="11" x2="25" y2="11" stroke="#31353B" stroke-width="1.6"/><line x1="9" y1="3" x2="9" y2="8" stroke="#31353B" stroke-width="1.6" stroke-linecap="round"/><line x1="19" y1="3" x2="19" y2="8" stroke="#31353B" stroke-width="1.6" stroke-linecap="round"/><rect x="7" y="14" width="4" height="3" rx="1" fill="#29C16A"/><rect x="13" y="14" width="4" height="3" rx="1" fill="#D0D3D8"/><rect x="7" y="19" width="4" height="3" rx="1" fill="#D0D3D8"/><rect x="13" y="19" width="4" height="3" rx="1" fill="#29C16A"/></svg></div>
+        <div class="showcase-title">Content Calendar</div>
+      </a>
+      <!-- 4. Pre-Seed Deck -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/Deck.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="24" height="16" rx="2" stroke="#31353B" stroke-width="1.6"/><line x1="2" y1="10" x2="26" y2="10" stroke="#31353B" stroke-width="1.6"/><rect x="6" y="13" width="8" height="2" rx="1" fill="#29C16A"/><rect x="6" y="17" width="12" height="1.5" rx="0.75" fill="#D0D3D8"/><path d="M14 24l-3-4h6z" fill="#31353B"/></svg></div>
+        <div class="showcase-title">Pre-Seed Deck</div>
+      </a>
+      <!-- 5. Evidence Map -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/Evidence-Map.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="3" stroke="#31353B" stroke-width="1.5"/><circle cx="21" cy="7" r="3" fill="#29C16A"/><circle cx="7" cy="21" r="3" stroke="#31353B" stroke-width="1.5"/><circle cx="21" cy="21" r="3" fill="#29C16A"/><circle cx="14" cy="14" r="3" fill="#31353B"/><line x1="9.5" y1="8.5" x2="12" y2="12" stroke="#D0D3D8" stroke-width="1.2"/><line x1="18.5" y1="8.5" x2="16" y2="12" stroke="#D0D3D8" stroke-width="1.2"/><line x1="9.5" y1="19.5" x2="12" y2="16" stroke="#D0D3D8" stroke-width="1.2"/><line x1="18.5" y1="19.5" x2="16" y2="16" stroke="#D0D3D8" stroke-width="1.2"/></svg></div>
+        <div class="showcase-title">Evidence Map</div>
+      </a>
+      <!-- 6. Market Map -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/Market-Map.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 22L10 8l6 8 4-6 4 12" stroke="#31353B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="8" r="2" fill="#29C16A"/><circle cx="20" cy="10" r="2" fill="#29C16A"/><circle cx="16" cy="16" r="1.5" fill="#D0D3D8"/></svg></div>
+        <div class="showcase-title">Market Map</div>
+      </a>
+      <!-- 7. Monthly Client Report -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/Monthly Client Report — NorthScale.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="3" width="20" height="22" rx="2" stroke="#31353B" stroke-width="1.6"/><line x1="8" y1="10" x2="20" y2="10" stroke="#D0D3D8" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="14" x2="20" y2="14" stroke="#D0D3D8" stroke-width="1.4" stroke-linecap="round"/><line x1="8" y1="18" x2="14" y2="18" stroke="#D0D3D8" stroke-width="1.4" stroke-linecap="round"/><rect x="8" y="6" width="5" height="2" rx="1" fill="#29C16A"/></svg></div>
+        <div class="showcase-title">Monthly Client Report</div>
+      </a>
+      <!-- 8. Onboarding Board -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/Onboarding-Board.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="7" height="20" rx="1.5" stroke="#31353B" stroke-width="1.5"/><rect x="10.5" y="4" width="7" height="20" rx="1.5" stroke="#31353B" stroke-width="1.5"/><rect x="19" y="4" width="7" height="20" rx="1.5" stroke="#31353B" stroke-width="1.5"/><rect x="3.5" y="7" width="4" height="3" rx="0.8" fill="#29C16A"/><rect x="3.5" y="12" width="4" height="3" rx="0.8" fill="#29C16A"/><rect x="12" y="7" width="4" height="3" rx="0.8" fill="#D0D3D8"/><rect x="12" y="12" width="4" height="3" rx="0.8" fill="#29C16A"/><rect x="20.5" y="7" width="4" height="3" rx="0.8" fill="#D0D3D8"/></svg></div>
+        <div class="showcase-title">Onboarding Board</div>
+      </a>
+      <!-- 9. Wait, What? -->
+      <a class="showcase-card" href="javascript:void(0)" onclick="gotoFile('./更多玩法/可视化一切/Wait-What-Google-Ad-Simulator.html')">
+        <div class="showcase-icon"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2l1.8 4.5 4.8-.6-2.8 4 2.8 4-4.8-.6L14 18l-1.8-4.7-4.8.6 2.8-4-2.8-4 4.8.6z" fill="#29C16A" stroke="#29C16A" stroke-width="0.5" stroke-linejoin="round"/><rect x="13" y="20" width="2" height="2.5" rx="1" fill="#31353B"/><rect x="13" y="23.5" width="2" height="2" rx="1" fill="#31353B"/><circle cx="22" cy="5" r="1.5" fill="#31353B"/><path d="M20 7l1-1.5" stroke="#31353B" stroke-width="1.2" stroke-linecap="round"/><circle cx="6" cy="22" r="1.2" fill="#D0D3D8"/></svg></div>
+        <div class="showcase-title">Wait, What?</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Closing ═══ -->
+<div class="container">
+  <div class="closing">
+    <p class="closing-text">
+      或许，我们根本不需要任何软件。而 Moxt 是什么？它只是一款软件吗？说实话，今天的我无法准确对其定义。<br><br>
+      AI agents 像是一个无比强大的新生命体。在过去数月，这种强大已被科技圈中的极客群体们共同见证。而在今天，我们为大家打开一扇门。我们想用一种简宜的交互方式，让更多人得以看见这种强大。<br><br>
+      这不是未来，这是当下。欢迎来到人机共生的新世界。
+    </p>
+    <div class="closing-sig">
+      <div class="closing-name">Ryan</div>
+      <div class="closing-role">Co-Founder, Moxt</div>
+    </div>
+    <div class="closing-footer">
+      除了本文，我们还在左侧的空间中为你准备了更多案例和实践，欢迎继续探索。
+    </div>
+  </div>
+</div>
+
+<script>
+  async function gotoFile(relativePath) {
+    await __workspace_ready__
+    await window.__workspace__.navigate.gotoFile(relativePath)
+  }
+</script>
+</body>
+</html>

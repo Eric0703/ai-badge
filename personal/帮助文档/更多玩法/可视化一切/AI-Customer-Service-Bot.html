@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Customer Service — Interactive Prototype</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;
+  --bg2:#12121a;
+  --bg3:#1a1a26;
+  --surface:#1e1e2e;
+  --surface2:#262638;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.1);
+  --text:#e8e6f0;
+  --text2:#9896a8;
+  --text3:#6b6980;
+  --accent:#a78bfa;
+  --accent2:#c4b5fd;
+  --accent-glow:rgba(167,139,250,0.15);
+  --accent-glow2:rgba(167,139,250,0.08);
+  --green:#4ade80;
+  --green-bg:rgba(74,222,128,0.1);
+  --pink:#f472b6;
+  --pink-bg:rgba(244,114,182,0.1);
+  --blue:#60a5fa;
+  --blue-bg:rgba(96,165,250,0.1);
+  --gold:#fbbf24;
+  --gold-bg:rgba(251,191,36,0.1);
+  --red:#f87171;
+  --red-bg:rgba(248,113,113,0.1);
+  --r:20px;
+}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px;
+  background-image:
+    radial-gradient(ellipse 600px 400px at 20% 10%, rgba(167,139,250,0.04), transparent),
+    radial-gradient(ellipse 500px 300px at 80% 90%, rgba(244,114,182,0.03), transparent);
+}
+.phone{
+  width:100%;max-width:440px;min-height:100vh;
+  background:var(--bg2);position:relative;overflow:hidden;
+  border-radius:0;
+  display:flex;flex-direction:column;
+}
+@media(min-width:500px){
+  body{align-items:center;padding:40px 20px}
+  .phone{
+    min-height:auto;height:820px;border-radius:40px;
+    border:1px solid var(--border2);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.03),
+      0 20px 60px rgba(0,0,0,0.5),
+      0 0 120px rgba(167,139,250,0.06);
+  }
+}
+
+.status-bar{
+  height:52px;padding:14px 28px 0;display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;font-weight:600;color:var(--text2);background:var(--bg2);flex-shrink:0;
+}
+.status-time{font-size:15px;font-weight:700;color:var(--text)}
+.status-icons{display:flex;gap:5px;align-items:center}
+.status-icons svg{width:15px;height:15px;opacity:.5}
+
+.header{
+  padding:10px 20px 14px;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  position:relative;z-index:10;flex-shrink:0;
+}
+.header::after{
+  content:'';position:absolute;bottom:-1px;left:20px;right:20px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-glow2),rgba(167,139,250,0.12),var(--accent-glow2),transparent);
+}
+.header-avatar{
+  width:40px;height:40px;border-radius:12px;position:relative;
+  background:linear-gradient(135deg,var(--accent),var(--pink));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;overflow:hidden;
+}
+.header-avatar::before{
+  content:'';position:absolute;inset:-2px;border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),var(--pink));opacity:.3;filter:blur(6px);z-index:-1;
+}
+.header-info .name{font-size:15px;font-weight:700;color:var(--text)}
+.header-info .status{font-size:11px;color:var(--green);display:flex;align-items:center;gap:5px}
+.header-info .status::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:var(--green);display:inline-block;
+  box-shadow:0 0 6px var(--green);
+}
+
+.chat{
+  flex:1;overflow-y:auto;padding:20px 16px 20px;display:flex;flex-direction:column;gap:12px;
+  scroll-behavior:smooth;
+}
+.chat::-webkit-scrollbar{width:3px}
+.chat::-webkit-scrollbar-track{background:transparent}
+.chat::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+
+.msg{display:flex;gap:8px;max-width:88%;animation:msgIn .45s cubic-bezier(.16,1,.3,1)}
+.msg.bot{align-self:flex-start}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{
+  width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;flex-shrink:0;margin-top:2px;overflow:hidden;
+}
+.msg.bot .msg-avatar{
+  background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;
+  box-shadow:0 2px 8px rgba(167,139,250,0.2);
+}
+.msg.user .msg-avatar{background:var(--surface2);color:var(--text2);font-size:13px}
+.msg-bubble{
+  padding:12px 16px;border-radius:18px;font-size:13.5px;line-height:1.65;
+}
+.msg.bot .msg-bubble{
+  background:var(--surface);border:1px solid var(--border);
+  border-bottom-left-radius:4px;color:var(--text);
+}
+.msg.user .msg-bubble{
+  background:linear-gradient(135deg,rgba(167,139,250,0.2),rgba(167,139,250,0.1));
+  border:1px solid rgba(167,139,250,0.15);
+  color:var(--text);border-bottom-right-radius:4px;
+}
+
+.choices{
+  display:flex;flex-direction:column;gap:6px;max-width:88%;align-self:flex-start;
+  margin-left:36px;animation:msgIn .45s cubic-bezier(.16,1,.3,1);
+}
+.choice-btn{
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:14px;padding:11px 16px;
+  font-size:13px;font-weight:500;color:var(--text);
+  cursor:pointer;text-align:left;transition:all .25s;
+  font-family:inherit;display:flex;align-items:center;gap:8px;
+  backdrop-filter:blur(4px);
+}
+.choice-btn:hover{
+  border-color:rgba(167,139,250,0.3);
+  background:var(--accent-glow);
+  color:var(--accent2);
+  box-shadow:0 0 20px rgba(167,139,250,0.06);
+}
+.choice-btn:active{transform:scale(.97)}
+.choice-btn .emoji{font-size:16px;flex-shrink:0}
+.choice-btn.selected{
+  border-color:var(--accent);
+  background:linear-gradient(135deg,rgba(167,139,250,0.2),rgba(167,139,250,0.1));
+  color:var(--accent2);pointer-events:none;
+  box-shadow:0 0 16px rgba(167,139,250,0.1);
+}
+.choice-btn.dimmed{opacity:.25;pointer-events:none}
+
+.typing{
+  display:flex;gap:5px;padding:12px 16px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;border-bottom-left-radius:4px;
+  align-self:flex-start;margin-left:36px;
+}
+.typing span{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);opacity:.4;
+  animation:typeDot 1.4s infinite;
+}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typeDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:.8;transform:translateY(-4px)}}
+@keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.result-card{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:16px;padding:16px;margin-top:4px;
+  backdrop-filter:blur(8px);
+}
+.result-card .title{
+  font-size:10px;font-weight:700;color:var(--accent);
+  text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.result-card .title::before{
+  content:'';width:3px;height:12px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--pink));
+}
+.result-card .row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;
+}
+.result-card .row:last-child{border-bottom:none}
+.result-card .row .label{color:var(--text3);font-size:11px}
+.result-card .row .value{font-weight:600;color:var(--text);font-size:12px;text-align:right;max-width:60%}
+
+.pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600}
+.pill-green{background:var(--green-bg);color:var(--green)}
+.pill-pink{background:var(--pink-bg);color:var(--pink)}
+.pill-purple{background:var(--accent-glow);color:var(--accent2)}
+.pill-gold{background:var(--gold-bg);color:var(--gold)}
+.pill-blue{background:var(--blue-bg);color:var(--blue)}
+
+.pbar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.pbar-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+
+.restart-btn{
+  background:none;border:1px solid var(--border2);border-radius:14px;
+  padding:10px 20px;font-size:13px;font-weight:600;
+  color:var(--text3);cursor:pointer;font-family:inherit;
+  transition:all .25s;margin-top:8px;align-self:center;
+}
+.restart-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.bottom-bar{
+  flex-shrink:0;
+  background:var(--bg2);border-top:1px solid var(--border);
+  padding:12px 16px 28px;position:relative;
+}
+.bottom-bar::before{
+  content:'';position:absolute;top:-1px;left:16px;right:16px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-glow2),rgba(167,139,250,0.1),var(--accent-glow2),transparent);
+}
+.bottom-bar-inner{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:22px;padding:0 6px;height:44px;
+}
+.bottom-input{
+  flex:1;height:100%;border:none;background:transparent;
+  padding:0 12px;font-size:13px;color:var(--text3);
+  font-family:inherit;pointer-events:none;
+  display:flex;align-items:center;
+}
+.bottom-send{
+  width:32px;height:32px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,var(--accent),var(--pink));
+  display:flex;align-items:center;justify-content:center;
+  cursor:default;opacity:.4;flex-shrink:0;
+}
+.bottom-send svg{width:14px;height:14px;color:#fff;transform:rotate(-45deg) translate(1px,-1px)}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="status-bar">
+    <div class="status-time">9:41</div>
+    <div class="status-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a7.07 7.07 0 0110 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="header-avatar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4.5"/>
+        <path d="M3 21v-1a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v1"/>
+        <path d="M15 3.5c1.5.7 2.5 2.3 2.5 4.2"/>
+        <circle cx="18.5" cy="5" r="1.5" fill="white" stroke="none"/>
+      </svg>
+    </div>
+    <div class="header-info">
+      <div class="name">Bella &mdash; Beauty AI Concierge</div>
+      <div class="status">Online &middot; Interactive Demo</div>
+    </div>
+  </div>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="bottom-bar">
+    <div class="bottom-bar-inner">
+      <div class="bottom-input">Tap an option above to continue...</div>
+      <div class="bottom-send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const BOT_AV = '\u2728';
+const USER_AV = '\uD83D\uDC64';
+
+const flow = {
+  start: {
+    bot: "Hey there! I\u2019m <b>Bella</b>, your AI beauty concierge \uD83D\uDC84\n\nI can walk you through our <b>3-tier support architecture</b>\u2014from L1 instant answers to L2 expert consultations to L3 live-agent escalation.\n\nWhat would you like to explore?",
+    choices: [
+      { emoji: '\uD83D\uDCE6', text: 'Shipping & order questions', next: 'l1_logistics' },
+      { emoji: '\uD83E\uDDF4', text: 'Product & skincare advice', next: 'l2_skincare_start' },
+      { emoji: '\uD83D\uDE30', text: 'Complaint / allergic reaction', next: 'l3_complaint' },
+      { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+    ]
+  },
+
+  /* ── L1: Shipping & Orders ─────────────────────── */
+  l1_logistics: {
+    userSaid: "I have a shipping / order question",
+    bot: "Sure thing! These go straight to the <b>L1 Agent</b>\u2014instant answers, no wait \u26A1\n\nWhat\u2019s going on?",
+    choices: [
+      { emoji: '\uD83D\uDE9A', text: "Where\u2019s my package?", next: 'l1_tracking' },
+      { emoji: '\uD83D\uDCB8', text: "When will my refund come through?", next: 'l1_refund' },
+      { emoji: '\uD83C\uDFAB', text: "My promo code didn\u2019t apply", next: 'l1_coupon' },
+    ]
+  },
+
+  l1_tracking: {
+    userSaid: "Where\u2019s my package?",
+    bot: "Looking up order #BT20260311\u2026",
+    delay: 1200,
+    followUp: {
+      bot: "Found it!",
+      card: {
+        title: 'L1 Agent \u00B7 Shipment Tracking',
+        rows: [
+          { label: 'Order', value: '#BT20260311' },
+          { label: 'Status', value: '\uD83D\uDFE2 In Transit' },
+          { label: 'Location', value: 'Chicago Distribution Center' },
+          { label: 'Est. Delivery', value: 'Tomorrow by 2:00 PM' },
+          { label: 'Response Time', value: '<span class="pill pill-green">0.8 sec</span>' },
+          { label: 'Handled By', value: '<span class="pill pill-blue">L1 Auto-reply</span>' },
+        ]
+      },
+      afterCard: "Shipment tracking is the textbook L1 scenario\u2014hits the carrier API and returns results in <b>under a second</b>, zero human involvement.\n\nThese queries make up roughly <b>35% of total CS volume</b>.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  l1_refund: {
+    userSaid: "When will my refund come through?",
+    bot: "Checking your refund status\u2026",
+    delay: 1000,
+    followUp: {
+      bot: "Here\u2019s what I found \uD83D\uDC47",
+      card: {
+        title: 'L1 Agent \u00B7 Refund Lookup',
+        rows: [
+          { label: 'Refund Amount', value: '$48.00' },
+          { label: 'Status', value: '\uD83D\uDFE1 Processing' },
+          { label: 'Initiated', value: 'Mar 9, 2026' },
+          { label: 'Est. Arrival', value: '3\u20135 business days (by Mar 14)' },
+          { label: 'Refund To', value: 'Original payment (Visa \u2022\u2022\u20224242)' },
+          { label: 'Handled By', value: '<span class="pill pill-blue">L1 Auto-reply</span>' },
+        ]
+      },
+      afterCard: "Refund lookups are another classic L1 task\u2014a straight database query, no judgment call needed.\n\nBut if the customer <i>disputes</i> the amount (\u201cWhy was I short-changed?\u201d), that escalates to <b>L3 live-agent support</b>.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  l1_coupon: {
+    userSaid: "My promo code didn\u2019t apply",
+    bot: "Checking your cart against promo rules\u2026",
+    delay: 1000,
+    followUp: {
+      bot: "Found the issue \uD83D\uDC47",
+      card: {
+        title: 'L1 Agent \u00B7 Promo Code Diagnosis',
+        rows: [
+          { label: 'Promo Code', value: 'GLOW20 (\u201cSpend $50, save $20\u201d)' },
+          { label: 'Cart Total', value: '$43.00' },
+          { label: 'Diagnosis', value: '\uD83D\uDD34 Minimum spend not met' },
+          { label: 'Shortfall', value: '$7.00 away from qualifying' },
+          { label: 'Suggestion', value: 'Add a $9.99 sheet mask to unlock the deal' },
+        ]
+      },
+      afterCard: "L1 Agent doesn\u2019t just explain <i>why</i> the code failed\u2014it <b>proactively suggests an add-on</b> to hit the threshold. That turns a support ticket into a conversion opportunity.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  /* ── L2: Skincare Consultation ─────────────────── */
+  l2_skincare_start: {
+    userSaid: "I\u2019d like some product & skincare advice",
+    bot: "Great\u2014skincare consultations are handled by the <b>L2 Agent</b>, which taps into our ingredient database and skincare knowledge graph \uD83E\uDDEC\n\nFirst up\u2014what\u2019s your skin type?",
+    choices: [
+      { emoji: '\uD83D\uDCA7', text: 'Dry / Combo-Dry', next: 'l2_dry' },
+      { emoji: '\u2728', text: 'Oily / Combo-Oily', next: 'l2_oily' },
+      { emoji: '\uD83C\uDF38', text: 'Sensitive', next: 'l2_sensitive' },
+    ]
+  },
+
+  l2_dry: {
+    userSaid: "My skin is dry / combo-dry",
+    bot: "Got it\u2014dry to combo-dry \uD83D\uDCA7\n\nWhat can I help with?",
+    choices: [
+      { emoji: '\uD83E\uDDF4', text: 'Recommend a toner + moisturizer', next: 'l2_dry_recommend' },
+      { emoji: '\u2697\uFE0F', text: 'Can I layer retinol with vitamin C?', next: 'l2_retinol' },
+    ]
+  },
+
+  l2_oily: {
+    userSaid: "My skin is oily / combo-oily",
+    bot: "Noted\u2014oily to combo-oily \u2728\n\nWhat are you looking for?",
+    choices: [
+      { emoji: '\uD83E\uDDF4', text: 'Oil control that won\u2019t dry me out', next: 'l2_oily_recommend' },
+      { emoji: '\u2697\uFE0F', text: 'How soon after exfoliating can I mask?', next: 'l2_acid' },
+    ]
+  },
+
+  l2_sensitive: {
+    userSaid: "I have sensitive skin",
+    bot: "Sensitive skin needs extra care \uD83C\uDF38\n\nWhat can I help you find?",
+    choices: [
+      { emoji: '\uD83E\uDDF4', text: 'Recommend a gentle moisturizer', next: 'l2_sensitive_recommend' },
+      { emoji: '\u26A0\uFE0F', text: 'Does this product contain alcohol?', next: 'l2_alcohol' },
+    ]
+  },
+
+  l2_dry_recommend: {
+    userSaid: "Recommend a toner + moisturizer for dry skin",
+    bot: "Running your profile against our ingredient compatibility engine\u2026",
+    delay: 1500,
+    followUp: {
+      bot: "Here\u2019s your personalized routine \uD83D\uDC47",
+      card: {
+        title: 'L2 Agent \u00B7 Personalized Recommendation',
+        rows: [
+          { label: 'Skin Type', value: 'Dry / Combo-Dry' },
+          { label: 'Toner', value: 'Lumi\u00E8re Radiance Essence (Bifida Ferment + HA)' },
+          { label: 'Moisturizer', value: 'Botanix Ultra Cream (Squalane + Glacier Protein)' },
+          { label: 'Key Actives', value: '<span class="pill pill-purple">Hyaluronic Acid</span> <span class="pill pill-blue">Squalane</span>' },
+          { label: 'Application Order', value: 'Toner \u2192 Serum \u2192 Moisturizer' },
+          { label: 'Handled By', value: '<span class="pill pill-purple">L2 Expert Consult</span>' },
+        ]
+      },
+      afterCard: "L2 Agent matches products to your skin profile with <b>full ingredient compatibility checks</b> and layering instructions. A generic chatbot simply can\u2019t do this.\n\nExpert consultations are only <b>~20% of volume</b> but have the biggest impact on conversion.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  l2_oily_recommend: {
+    userSaid: "I need oil control without the dryness",
+    bot: "Matching\u2026",
+    delay: 1300,
+    followUp: {
+      bot: "Here\u2019s a balanced oil-control routine \uD83D\uDC47",
+      card: {
+        title: 'L2 Agent \u00B7 Oil Control Routine',
+        rows: [
+          { label: 'Skin Type', value: 'Oily / Combo-Oily' },
+          { label: 'Toner', value: 'SkinShield Balancing Toner (Niacinamide + BHA)' },
+          { label: 'Moisturizer', value: 'DermaClear Oil-Free Lotion (Ceramides + HA)' },
+          { label: 'Core Approach', value: 'Control sebum without stripping the moisture barrier' },
+          { label: 'Heads Up', value: '<span class="pill pill-gold">Avoid alcohol-heavy formulas</span>' },
+        ]
+      },
+      afterCard: "Oil control is the #1 concern for oily-skin shoppers. L2 Agent\u2019s killer feature is <b>ingredient conflict detection</b>\u2014it makes sure the products it recommends actually play well together.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  l2_retinol: {
+    userSaid: "Can I layer retinol with vitamin C?",
+    bot: "Running ingredient conflict check\u2026",
+    delay: 1200,
+    followUp: {
+      bot: "\u26A0\uFE0F Heads up\u2014pairing rules apply!",
+      card: {
+        title: 'L2 Agent \u00B7 Ingredient Conflict Check',
+        rows: [
+          { label: 'Ingredient A', value: 'Retinol (Vitamin A derivative)' },
+          { label: 'Ingredient B', value: 'L-Ascorbic Acid (Vitamin C)' },
+          { label: 'Risk Level', value: '<span class="pill pill-pink">\u26A0\uFE0F Medium</span>' },
+          { label: 'Why', value: 'Layering both at once can cause redness & irritation' },
+          { label: 'Best Practice', value: 'Vitamin C in the AM \u2192 Retinol in the PM' },
+          { label: 'Handled By', value: '<span class="pill pill-purple">L2 Expert Consult</span>' },
+        ]
+      },
+      afterCard: "\u201CVitamin C in the morning, retinol at night\u201D is the gold-standard pairing rule. L2 Agent has a <b>full ingredient conflict matrix</b> built in\u2014it can instantly flag whether any two actives are safe to layer.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  l2_acid: {
+    userSaid: "How soon after exfoliating can I use a sheet mask?",
+    bot: "Pulling from the skincare knowledge base\u2026",
+    delay: 1000,
+    followUp: {
+      bot: "Post-exfoliation timeline \uD83D\uDC47",
+      card: {
+        title: 'L2 Agent \u00B7 Post-Exfoliation Care',
+        rows: [
+          { label: '0\u20132 hrs after', value: '\uD83D\uDD34 Moisturizer only\u2014skip everything else' },
+          { label: '24 hrs after', value: '\uD83D\uDFE1 Gentle hydrating mask OK (no actives)' },
+          { label: '48 hrs after', value: '\uD83D\uDFE2 Resume your normal routine' },
+          { label: 'Hard No', value: '<span class="pill pill-pink">Never mask on the same day you exfoliate</span>' },
+          { label: 'Recommended', value: 'Pure hyaluronic acid sheet mask the next day' },
+        ]
+      },
+      afterCard: "Post-treatment timelines\u2014after chemical peels, after aesthetic procedures, during seasonal transitions\u2014are some of the most <b>specialized yet high-frequency</b> questions in beauty CS. L2 Agent answers them from a structured knowledge graph.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  l2_sensitive_recommend: {
+    userSaid: "Recommend a gentle moisturizer for sensitive skin",
+    bot: "Filtering for sensitive-safe ingredients\u2026",
+    delay: 1300,
+    followUp: {
+      bot: "Top picks for sensitive skin \uD83D\uDC47",
+      card: {
+        title: 'L2 Agent \u00B7 Sensitive Skin Picks',
+        rows: [
+          { label: 'Top Pick', value: 'SkinShield Cicaplast Balm (Panthenol + Centella)' },
+          { label: 'Runner-Up', value: 'DermaClear Soothing Barrier Cream' },
+          { label: 'Safe Actives', value: '<span class="pill pill-green">Panthenol</span> <span class="pill pill-green">Ceramides</span>' },
+          { label: 'Avoid', value: '<span class="pill pill-pink">Alcohol</span> <span class="pill pill-pink">Fragrance</span> <span class="pill pill-pink">AHA/BHA</span>' },
+        ]
+      },
+      afterCard: "For sensitive skin, the approach is <b>elimination-first</b>\u2014filter out every potential irritant, then match from the safe-ingredient pool. Simple, but something only a purpose-built agent with ingredient data can do reliably.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  l2_alcohol: {
+    userSaid: "Does this product have alcohol? Safe for sensitive skin?",
+    bot: "Scanning the ingredient list\u2026",
+    delay: 1100,
+    followUp: {
+      bot: "Ingredient analysis \uD83D\uDC47",
+      card: {
+        title: 'L2 Agent \u00B7 Ingredient Safety Check',
+        rows: [
+          { label: 'Product', value: 'Lumi\u00E8re Radiance Toner 150 ml' },
+          { label: 'Contains Alcohol', value: '<span class="pill pill-pink">Yes \u2014 Denatured Alcohol (#4 on INCI)</span>' },
+          { label: 'Sensitive-Safe?', value: '\u26A0\uFE0F Not recommended\u2014may cause irritation' },
+          { label: 'Alternative', value: 'AquaVita Thermal Toner (alcohol-free, fragrance-free)' },
+          { label: 'Data Source', value: 'Ingredient DB v2026.03' },
+        ]
+      },
+      afterCard: "Ingredient safety screening is the <b>#1 must-have</b> for sensitive-skin shoppers. L2 Agent cross-references our ingredient DB in real time, flags irritants, and surfaces safer alternatives\u2014all in under two seconds.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  /* ── L3: Human Escalation ──────────────────────── */
+  l3_complaint: {
+    userSaid: "I need to report an allergic reaction to one of your products",
+    bot: "\u26A0\uFE0F Allergic reactions are a health and safety matter\u2014this is <b>immediately escalated to L3 live-agent support</b>.\n\nLet me walk you through what happens\u2026",
+    delay: 1500,
+    followUp: {
+      bot: "L3 escalation triggered \uD83D\uDC47",
+      card: {
+        title: '\uD83D\uDD34 L3 Escalation \u00B7 Allergic Reaction',
+        rows: [
+          { label: 'Reason', value: 'Health & safety complaint' },
+          { label: 'Priority', value: '<span class="pill pill-pink">P0 \u2014 Highest</span>' },
+          { label: 'Assigned To', value: 'Senior CS Agent + QA Manager' },
+          { label: 'Response SLA', value: '\u2264 3 min to connect with a live agent' },
+          { label: 'AI Assist', value: 'Auto-pulls purchase history + product batch #' },
+          { label: 'Parallel Actions', value: 'Notify QA team \u00B7 Log adverse event report' },
+        ]
+      },
+      afterCard: "<b>Why does this go to a human every time?</b>\n\n1. Health decisions require <b>professional judgment</b>\u2014not an AI call\n2. Distressed customers need <b>genuine empathy</b>\n3. May trigger a <b>product recall</b> investigation\n4. FDA compliance requires documented adverse-event reporting\n\nAI\u2019s role: auto-pull the customer\u2019s purchase history and product batch info so the agent has <b>full context before they even pick up</b>\u2014not to replace the human.",
+      choices: [
+        { emoji: '\uD83D\uDD04', text: 'Try another scenario', next: 'start' },
+        { emoji: '\uD83D\uDCCA', text: 'See the full architecture', next: 'architecture' },
+      ]
+    }
+  },
+
+  /* ── Architecture Overview ─────────────────────── */
+  architecture: {
+    userSaid: "Show me the full architecture",
+    bot: "Here\u2019s the <b>3-tier support architecture</b> at a glance \uD83D\uDC47",
+    card: {
+      title: 'AI Customer Service Architecture',
+      rows: [
+        { label: 'L1 \u00B7 Instant Answers', value: '<span class="pill pill-green">Resolves 70%</span> Shipping / Orders / FAQ' },
+        { label: 'L2 \u00B7 Expert Consult', value: '<span class="pill pill-purple">Resolves 20%</span> Ingredients / Recs / Routines' },
+        { label: 'L3 \u00B7 Live Agent', value: '<span class="pill pill-pink">Handles 10%</span> Complaints / Safety / VIP' },
+      ]
+    },
+    delay: 800,
+    followUp: {
+      bot: "Target KPIs \uD83D\uDC47",
+      card: {
+        title: 'Key Performance Indicators',
+        rows: [
+          { label: 'AI Resolution Rate', value: '\u2265 80%', bar: { width: '80%', color: 'var(--green)' } },
+          { label: 'First Response', value: '\u2264 5 sec', bar: { width: '95%', color: 'var(--blue)' } },
+          { label: 'Avg. Resolution Time', value: '\u2264 3 min', bar: { width: '70%', color: 'var(--accent)' } },
+          { label: 'CSAT Score', value: '\u2265 4.5 / 5', bar: { width: '90%', color: 'var(--gold)' } },
+          { label: 'Escalation Rate', value: '\u2264 20%', bar: { width: '20%', color: 'var(--pink)' } },
+        ]
+      },
+      afterCard: "\u26A0\uFE0F <b>The Klarna cautionary tale:</b> They replaced 700 CS agents with AI, saved $40M a year\u2014then watched customer satisfaction tank and had to start rehiring.\n\n<b>Our principle: AI augments your support team. It doesn\u2019t replace it.</b>\n\nWant to try a specific tier?",
+      choices: [
+        { emoji: '\uD83D\uDCE6', text: 'Try L1 \u2014 Instant Answers', next: 'l1_logistics' },
+        { emoji: '\uD83E\uDDF4', text: 'Try L2 \u2014 Expert Consult', next: 'l2_skincare_start' },
+        { emoji: '\uD83D\uDE30', text: 'Try L3 \u2014 Live Agent Escalation', next: 'l3_complaint' },
+      ]
+    }
+  },
+};
+
+/* ── Rendering Engine ──────────────────────────────── */
+
+function addMsg(type, html) {
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  const av = type === 'bot' ? BOT_AV : USER_AV;
+  div.innerHTML = `<div class="msg-avatar">${av}</div><div class="msg-bubble">${html}</div>`;
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+function addCard(cardData) {
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.style.maxWidth = '92%';
+  let rowsHtml = cardData.rows.map(r => {
+    let extra = '';
+    if (r.bar) {
+      extra = `<div class="pbar"><div class="pbar-fill" style="width:0;background:${r.bar.color}" data-w="${r.bar.width}"></div></div>`;
+    }
+    return `<div class="row"><span class="label">${r.label}</span><span class="value">${r.value}</span></div>${extra}`;
+  }).join('');
+  div.innerHTML = `<div class="msg-avatar">${BOT_AV}</div><div class="result-card"><div class="title">${cardData.title}</div>${rowsHtml}</div>`;
+  chat.appendChild(div);
+  setTimeout(() => {
+    div.querySelectorAll('[data-w]').forEach(b => b.style.width = b.dataset.w);
+  }, 100);
+  scrollBottom();
+}
+
+function addChoices(choices) {
+  const div = document.createElement('div');
+  div.className = 'choices';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="emoji">${c.emoji}</span>${c.text}`;
+    btn.onclick = () => {
+      div.querySelectorAll('.choice-btn').forEach(b => b.classList.add('dimmed'));
+      btn.classList.remove('dimmed');
+      btn.classList.add('selected');
+      setTimeout(() => runStep(c.next), 300);
+    };
+    div.appendChild(btn);
+  });
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+function addTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  chat.appendChild(div);
+  scrollBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+function scrollBottom() {
+  setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
+}
+
+async function runStep(key) {
+  const step = flow[key];
+  if (!step) return;
+  if (step.userSaid) { addMsg('user', step.userSaid); await wait(400); }
+  addTyping(); await wait(step.delay || 800); removeTyping();
+  addMsg('bot', step.bot.replace(/\n/g, '<br>'));
+  if (step.card) { await wait(300); addCard(step.card); }
+  if (step.followUp) {
+    await wait(step.followUp.delay || 600);
+    addTyping(); await wait(800); removeTyping();
+    addMsg('bot', step.followUp.bot.replace(/\n/g, '<br>'));
+    if (step.followUp.card) { await wait(300); addCard(step.followUp.card); }
+    if (step.followUp.afterCard) { await wait(400); addMsg('bot', step.followUp.afterCard.replace(/\n/g, '<br>')); }
+    if (step.followUp.choices) { await wait(300); addChoices(step.followUp.choices); }
+  } else if (step.choices) {
+    await wait(300); addChoices(step.choices);
+  }
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+runStep('start');
+</script>
+</body>
+</html>

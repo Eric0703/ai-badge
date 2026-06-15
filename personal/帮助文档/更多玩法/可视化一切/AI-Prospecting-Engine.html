@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Prospecting Engine — Morning Brief · Mar 13, 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070d1c;--panel:#0c1728;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --t1:#e2e8f0;--t2:#94a3b8;--t3:#475569;
+  --blue:#3b82f6;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;}
+
+/* HEADER */
+.hdr{height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);}
+.brand{font-size:12px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.brand em{color:var(--blue);font-style:normal;}
+.hdr-meta{font-size:11px;color:var(--t3);}
+.hdr-r{display:flex;align-items:center;gap:8px;}
+.avatar{width:26px;height:26px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;}
+.usr{font-size:11px;color:var(--t2);}
+
+/* MAIN */
+.main{flex:1;display:grid;grid-template-columns:44% 56%;min-height:0;}
+
+/* ── LEFT: MORNING BRIEF ── */
+.brief{background:var(--panel);border-right:1px solid var(--border);padding:36px 40px;display:flex;flex-direction:column;gap:20px;overflow:hidden;}
+
+.brief-status{display:flex;align-items:center;gap:8px;}
+.ai-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.18);border-radius:20px;font-size:10px;color:var(--green);}
+.ai-dot{width:4px;height:4px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.brief-status-sub{font-size:10px;color:var(--t3);}
+
+.brief-greeting{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1.2;}
+
+.brief-text{flex:1;display:flex;flex-direction:column;gap:11px;min-height:0;overflow:hidden;}
+.para{font-size:13px;color:var(--t2);line-height:1.75;}
+.para strong{color:var(--t1);font-weight:600;}
+.para .hi-red{color:var(--red);font-weight:600;}
+.para .hi-green{color:var(--green);font-weight:600;}
+.para .hi-amber{color:var(--amber);font-weight:600;}
+.para .hi-blue{color:var(--blue);font-weight:600;}
+
+.divider{width:28px;height:1px;background:var(--border2);}
+
+.stats-row{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0;}
+.stat{flex:1;padding:11px 14px;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.sv{font-size:17px;font-weight:800;letter-spacing:-.5px;line-height:1;margin-bottom:3px;}
+.sl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;}
+
+.brief-footer{flex-shrink:0;background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.12);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.bf-left{font-size:11px;color:var(--t2);}
+.bf-left strong{color:var(--green);font-weight:600;}
+.bf-right{font-size:10px;color:var(--t3);}
+
+/* ── RIGHT: EXCEPTION INBOX ── */
+.inbox{display:flex;flex-direction:column;padding:24px 26px;gap:11px;overflow:hidden;}
+
+.inbox-hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
+.inbox-title{font-size:13px;font-weight:700;}
+.inbox-count{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);}
+.count-badge{background:var(--amber);color:#000;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+
+.ex-items{flex:1;display:flex;flex-direction:column;gap:9px;min-height:0;}
+
+/* Exception item */
+.ex{
+  flex:1;min-height:0;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:13px 15px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+.ex-bar{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.ex-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.ex-type{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:4px;}
+.ex-time{font-size:9px;color:var(--t3);}
+.ex-company{font-size:13px;font-weight:700;margin-bottom:2px;}
+.ex-who{font-size:10px;color:var(--t3);}
+.ex-quote{font-size:11px;color:var(--t2);line-height:1.55;margin:8px 0;font-style:italic;padding:7px 10px;background:rgba(255,255,255,.03);border-left:2px solid var(--border2);border-radius:0 4px 4px 0;}
+.ex-ai{font-size:10px;color:var(--t2);line-height:1.5;margin-bottom:8px;}
+.ex-ai strong{font-weight:600;color:var(--t1);}
+.ex-options{display:flex;gap:6px;flex-wrap:wrap;}
+.ex-opt{font-size:10px;font-weight:600;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);color:var(--t2);cursor:pointer;transition:background .15s,border-color .15s;}
+.ex-opt:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.2);}
+.ex-opt.primary{border-color:rgba(59,130,246,.35);color:var(--blue);}
+.ex-opt.primary:hover{background:rgba(59,130,246,.08);}
+
+/* Type colors */
+.type-reply{background:rgba(16,185,129,.1);color:var(--green);}
+.type-strategy{background:rgba(245,158,11,.1);color:var(--amber);}
+.type-pause{background:rgba(239,68,68,.1);color:var(--red);}
+
+/* Sent row */
+.sent-row{flex-shrink:0;border-top:1px solid var(--border);padding-top:10px;}
+.sent-label{font-size:10px;color:var(--t3);margin-bottom:7px;}
+.sent-chips{display:flex;gap:6px;}
+.sent-chip{flex:1;background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.1);border-radius:6px;padding:6px 8px;}
+.sent-chip-co{font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sent-chip-st{font-size:9px;color:var(--green);margin-top:1px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="brand">Sales<em>CRM</em></div>
+    <div class="hdr-meta">AI Prospecting Engine &nbsp;·&nbsp; Thursday, March 13, 2026</div>
+  </div>
+  <div class="hdr-r">
+    <div class="avatar">MC</div>
+    <div class="usr">Marcus Chen &nbsp;·&nbsp; Sales Lead</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT: MORNING BRIEF -->
+  <div class="brief">
+    <div class="brief-status">
+      <div class="ai-pill"><div class="ai-dot"></div>8 sent · 07:42 AM</div>
+      <div class="brief-status-sub">2h 40min saved</div>
+    </div>
+
+    <div class="brief-greeting">Good morning, Marcus.</div>
+
+    <div class="brief-text">
+      <div class="para">
+        AI finished researching <strong>8 accounts</strong> at 07:42 AM and sent all outreach. Every email references a real external signal from the past 30 days, with 10–15 second send intervals to protect deliverability.
+      </div>
+      <div class="para">
+        This week's reply rate dropped to <span class="hi-red">2.1%</span>, below the 3.43% baseline. AI traced the cause: 9 of 14 emails shared the same subject line opening. Signal-first versions for today's 8 emails are ready — <span class="hi-amber">awaiting your approval</span>.
+      </div>
+      <div class="para">
+        <span class="hi-blue">3 items</span> on the right need your call. Everything else is handled.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="stats-row">
+      <div class="stat">
+        <div class="sv" style="color:var(--red);">2.1%</div>
+        <div class="sl">Reply Rate</div>
+      </div>
+      <div class="stat">
+        <div class="sv" style="color:var(--green);">8</div>
+        <div class="sl">Sent Today</div>
+      </div>
+      <div class="stat">
+        <div class="sv" style="color:var(--amber);">71%</div>
+        <div class="sl">Quota</div>
+      </div>
+      <div class="stat">
+        <div class="sv" style="color:var(--red);">$287K</div>
+        <div class="sl">Gap · Mar 31</div>
+      </div>
+    </div>
+
+    <div class="brief-footer">
+      <div class="bf-left"><strong>AI running normally today</strong> &nbsp;·&nbsp; 8 researched · 8 sent · tracking replies</div>
+      <div class="bf-right">Last run 07:42 AM</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: EXCEPTION INBOX -->
+  <div class="inbox">
+    <div class="inbox-hdr">
+      <div class="inbox-title">Needs Your Decision</div>
+      <div class="inbox-count"><div class="count-badge">3</div>items pending</div>
+    </div>
+
+    <div class="ex-items">
+
+      <!-- 1. Reply received -->
+      <div class="ex">
+        <div class="ex-bar" style="background:var(--green);"></div>
+        <div>
+          <div class="ex-top">
+            <span class="ex-type type-reply">📩 Reply Received</span>
+            <span class="ex-time">08:31 AM</span>
+          </div>
+          <div class="ex-company">Meridian Analytics</div>
+          <div class="ex-who">Sarah Kim · VP of Sales</div>
+          <div class="ex-quote">"Thanks Marcus, this is actually timely. We just started evaluating tools this week. Happy to chat."</div>
+          <div class="ex-ai"><strong>AI assessment:</strong> High-intent signal. Recommend booking within 24h. AI has drafted a meeting request — waiting for your go-ahead.</div>
+        </div>
+        <div class="ex-options">
+          <div class="ex-opt primary">Send AI-drafted meeting request</div>
+          <div class="ex-opt">I'll write it</div>
+          <div class="ex-opt">Skip for now</div>
+        </div>
+      </div>
+
+      <!-- 2. Strategy change request -->
+      <div class="ex">
+        <div class="ex-bar" style="background:var(--amber);"></div>
+        <div>
+          <div class="ex-top">
+            <span class="ex-type type-strategy">⚙ Strategy Change Request</span>
+            <span class="ex-time">07:44 AM</span>
+          </div>
+          <div class="ex-company">Subject Line Pattern Detected</div>
+          <div class="ex-who">Affects 8 unsent emails today</div>
+          <div class="ex-quote">9 of 14 emails used "Quick question about…" — open rate 18.3%. Signal-led subject lines average 34.1%.</div>
+          <div class="ex-ai"><strong>AI suggestion:</strong> Switch to signal-first copy. New versions for today's 8 emails are ready — confirm before sending.</div>
+        </div>
+        <div class="ex-options">
+          <div class="ex-opt primary">Approve switch</div>
+          <div class="ex-opt">Review new versions</div>
+          <div class="ex-opt">Keep originals</div>
+        </div>
+      </div>
+
+      <!-- 3. Pause notification -->
+      <div class="ex">
+        <div class="ex-bar" style="background:var(--red);"></div>
+        <div>
+          <div class="ex-top">
+            <span class="ex-type type-pause">⏸ AI Paused</span>
+            <span class="ex-time">06:58 AM</span>
+          </div>
+          <div class="ex-company">Beacon Financial</div>
+          <div class="ex-who">Kevin Marsh · CRO</div>
+          <div class="ex-quote">Kevin Marsh's LinkedIn showed "no longer at company" yesterday. No incoming CRO identified yet — email would likely go unread.</div>
+          <div class="ex-ai"><strong>AI assessment:</strong> Proactively paused this lead. Awaiting your call.</div>
+        </div>
+        <div class="ex-options">
+          <div class="ex-opt primary">Resume when new CRO starts</div>
+          <div class="ex-opt">Switch contact</div>
+          <div class="ex-opt">Drop this lead</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sent without exceptions -->
+    <div class="sent-row">
+      <div class="sent-label">5 more sent without exceptions</div>
+      <div class="sent-chips">
+        <div class="sent-chip"><div class="sent-chip-co">Kestrel DevOps</div><div class="sent-chip-st">✓ Sent</div></div>
+        <div class="sent-chip"><div class="sent-chip-co">Prism Health</div><div class="sent-chip-st">✓ Sent</div></div>
+        <div class="sent-chip"><div class="sent-chip-co">Northgate</div><div class="sent-chip-st">✓ Sent</div></div>
+        <div class="sent-chip"><div class="sent-chip-co">Luminary Edu</div><div class="sent-chip-st">✓ Sent</div></div>
+        <div class="sent-chip"><div class="sent-chip-co">Vantage Sec</div><div class="sent-chip-st">✓ Sent</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

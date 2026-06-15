@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 工具渗透率 · 交互式看板</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
+
+    :root {
+      --bg: #070d1f;
+      --surface: #0d1424;
+      --surface2: #111827;
+      --border: rgba(255,255,255,0.06);
+      --text: #e2e8f0;
+      --muted: #475569;
+      --accent: #3b82f6;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      padding: 20px 24px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .header-left { }
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #4a9eff;
+      margin-bottom: 4px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .header-sub {
+      font-size: 12px;
+      color: #475569;
+      margin-top: 2px;
+    }
+
+    /* Filter tabs */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .filter-label {
+      font-size: 12px;
+      color: #475569;
+      margin-right: 4px;
+    }
+    .tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab:hover { border-color: rgba(59,130,246,0.4); color: #93c5fd; }
+    .tab.active {
+      background: rgba(59,130,246,0.15);
+      border-color: rgba(59,130,246,0.5);
+      color: #60a5fa;
+    }
+
+    /* KPI cards */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .kpi-card:hover { border-color: rgba(59,130,246,0.3); }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .kpi-card.blue::before { background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
+    .kpi-card.green::before { background: linear-gradient(90deg, #10b981, #3b82f6); }
+    .kpi-card.orange::before { background: linear-gradient(90deg, #f97316, #ef4444); }
+    .kpi-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+    .kpi-label { font-size: 11px; color: #475569; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .kpi-num {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .kpi-card.blue .kpi-num { color: #60a5fa; }
+    .kpi-card.green .kpi-num { color: #34d399; }
+    .kpi-card.orange .kpi-num { color: #fb923c; }
+    .kpi-card.purple .kpi-num { color: #a78bfa; }
+    .kpi-desc { font-size: 12px; color: #334155; }
+    .kpi-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      margin-top: 6px;
+    }
+    .badge-up { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-hot { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    /* Chart grid */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .chart-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 12px;
+    }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: border-color 0.3s;
+    }
+    .chart-card:hover { border-color: rgba(59,130,246,0.2); }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .card-sub { font-size: 11px; color: #334155; margin-bottom: 12px; }
+    .chart-inner { height: 220px; }
+    .chart-inner-sm { height: 240px; }
+
+    /* Region legend */
+    .region-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .rleg {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #475569;
+    }
+    .rleg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #1e293b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="eyebrow">Global AI Adoption Report 2025</div>
+      <h1>AI 工具渗透率 · 交互式看板</h1>
+      <div class="header-sub">全球企业 AI 采用率 · 2025 年数据 · 可按维度筛选</div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">维度</span>
+      <button class="tab active" onclick="switchTab('countries')">国家</button>
+      <button class="tab" onclick="switchTab('generation')">年龄</button>
+      <button class="tab" onclick="switchTab('usecase')">用途</button>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card blue">
+      <div class="kpi-label">全球企业 AI 采用率</div>
+      <div class="kpi-num">88%</div>
+      <div class="kpi-desc">2025 全年均值</div>
+      <div class="kpi-badge badge-up">↑ +10pp YoY</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">最高渗透率国家</div>
+      <div class="kpi-num">93%</div>
+      <div class="kpi-desc">阿联酋 · 全球第 1</div>
+      <div class="kpi-badge badge-hot">🔥 中东领跑</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">年增速最快年龄段</div>
+      <div class="kpi-num">76%</div>
+      <div class="kpi-desc">Gen Z（18–24 岁）</div>
+      <div class="kpi-badge badge-up">3.6× vs 60+</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">最普遍使用场景</div>
+      <div class="kpi-num">68%</div>
+      <div class="kpi-desc">写作 / 内容创作</div>
+      <div class="kpi-badge badge-up">↑ 全场景第 1</div>
+    </div>
+  </div>
+
+  <!-- Chart Row 1 -->
+  <div class="chart-grid" id="chart-row-1">
+    <div class="chart-card">
+      <div class="card-title">增长趋势</div>
+      <div class="card-sub">季度渗透率变化 · 2022–2024</div>
+      <div class="chart-inner" id="trend-chart"></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title" id="ring-title">使用场景分布</div>
+      <div class="card-sub" id="ring-sub">按用途类别占比</div>
+      <div class="chart-inner" id="ring-chart"></div>
+    </div>
+  </div>
+
+  <!-- Chart Row 2 -->
+  <div class="chart-grid-3" id="chart-row-2">
+    <div class="chart-card">
+      <div class="card-title">国家排名（亚太）</div>
+      <div class="card-sub">Top AI 渗透率</div>
+      <div class="chart-inner-sm" id="bar-apac"></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">国家排名（欧美）</div>
+      <div class="card-sub">主要经济体对比</div>
+      <div class="chart-inner-sm" id="bar-west"></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">代际差异</div>
+      <div class="card-sub">各年龄段渗透率</div>
+      <div class="chart-inner-sm" id="gen-chart"></div>
+      <div class="region-legend" style="margin-top:6px">
+        <div class="rleg"><div class="rleg-dot" style="background:#10b981"></div>高渗透</div>
+        <div class="rleg"><div class="rleg-dot" style="background:#3b82f6"></div>中等</div>
+        <div class="rleg"><div class="rleg-dot" style="background:#f59e0b"></div>低渗透</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">数据来源：McKinsey & Company (2025) · Stanford HAI (2025) · Microsoft AI Economy Institute (2025)</div>
+
+  <script>
+    // ── Data ──
+    const DATA = {
+      countries: {
+        apac: {
+          names: ['日本', '印尼', '韩国', '中国', '新加坡', '印度', '阿联酋'],
+          vals: [51, 74, 80, 82, 85, 85, 93],
+          color: '#f97316'
+        },
+        west: {
+          names: ['法国', '德国', '英国', '加拿大', '澳大利亚', '美国'],
+          vals: [65, 55, 60, 62, 65, 72],
+          color: '#3b82f6'
+        }
+      },
+      generation: {
+        labels: ['60+', '婴儿潮 45–59', 'Gen X 35–44', '千禧 25–34', 'Gen Z 18–24'],
+        vals: [21, 36, 55, 71, 76],
+        colors: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981']
+      },
+      usecase: {
+        labels: ['数据分析', '语言翻译', '图像生成', '代码辅助', '搜索研究', '写作创作'],
+        vals: [28, 33, 37, 43, 54, 68],
+        pieData: [
+          { name: '写作创作', value: 68, itemStyle: { color: '#10b981' } },
+          { name: '搜索研究', value: 54, itemStyle: { color: '#3b82f6' } },
+          { name: '代码辅助', value: 43, itemStyle: { color: '#8b5cf6' } },
+          { name: '图像生成', value: 37, itemStyle: { color: '#f59e0b' } },
+          { name: '语言翻译', value: 33, itemStyle: { color: '#f97316' } },
+          { name: '数据分析', value: 28, itemStyle: { color: '#ec4899' } },
+        ]
+      },
+      trend: {
+        quarters: ['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+        vals: [8, 12, 15, 19, 28, 38, 46, 55, 62, 68, 74, 78, 82, 85, 87, 88]
+      }
+    };
+
+    // ── Common ECharts styles ──
+    const dark = {
+      bg: 'transparent',
+      tooltip: {
+        backgroundColor: '#0f172a',
+        borderColor: '#1e293b',
+        textStyle: { color: '#e2e8f0', fontSize: 12 }
+      }
+    };
+
+    // ── Trend Chart ──
+    const trendChart = echarts.init(document.getElementById('trend-chart'));
+    trendChart.setOption({
+      backgroundColor: dark.bg,
+      tooltip: { ...dark.tooltip, trigger: 'axis', formatter: (p) => `${p[0].name}: <b>${p[0].value}%</b>` },
+      grid: { top: 12, right: 12, bottom: 12, left: 12, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: DATA.trend.quarters,
+        axisLabel: { color: '#475569', fontSize: 10 },
+        axisLine: { lineStyle: { color: '#1e293b' } },
+        axisTick: { show: false }
+      },
+      yAxis: {
+        type: 'value', max: 80,
+        axisLabel: { color: '#475569', fontSize: 10, formatter: '{value}%' },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } }
+      },
+      series: [{
+        type: 'line', data: DATA.trend.vals,
+        smooth: true, symbolSize: 5,
+        lineStyle: { color: '#3b82f6', width: 2.5 },
+        itemStyle: { color: '#3b82f6' },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: 'rgba(59,130,246,0.25)' }, { offset: 1, color: 'rgba(59,130,246,0)' }]
+          }
+        },
+        markLine: {
+          silent: true,
+          data: [{ yAxis: 88, name: '均值' }],
+          lineStyle: { color: '#f59e0b', type: 'dashed', width: 1 },
+          label: { formatter: '2025均值 88%', color: '#f59e0b', fontSize: 10 }
+        }
+      }]
+    });
+
+    // ── Ring / Pie Chart ──
+    let ringChart = echarts.init(document.getElementById('ring-chart'));
+    function renderRingUsecase() {
+      ringChart.setOption({
+        backgroundColor: dark.bg,
+        tooltip: { ...dark.tooltip, trigger: 'item', formatter: '{b}: {c}%' },
+        series: [{
+          type: 'pie', radius: ['42%', '68%'],
+          center: ['50%', '50%'],
+          data: DATA.usecase.pieData,
+          borderRadius: 0,
+          label: { show: true, color: '#64748b', fontSize: 11, formatter: '{b}\n{c}%' },
+          labelLine: { lineStyle: { color: '#334155' } },
+          emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } }
+        }]
+      });
+    }
+    renderRingUsecase();
+
+    // ── Bar APAC ──
+    const barApac = echarts.init(document.getElementById('bar-apac'));
+    function renderBarApac(data) {
+      barApac.setOption({
+        backgroundColor: dark.bg,
+        tooltip: { ...dark.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (p) => `${p[0].name}: <b>${p[0].value}%</b>` },
+        grid: { top: 8, right: 48, bottom: 8, left: 8, containLabel: true },
+        xAxis: { type: 'value', max: 90, axisLabel: { color: '#475569', fontSize: 10, formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } } },
+        yAxis: { type: 'category', data: data.names, axisLabel: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false } },
+        series: [{
+          type: 'bar',
+          data: data.vals.map((v, i) => ({
+            value: v,
+            itemStyle: { color: i === data.vals.length - 1 ? '#f97316' : 'rgba(249,115,22,0.4)', borderRadius: [0, 4, 4, 0] }
+          })),
+          label: { show: true, position: 'right', formatter: '{c}%', color: '#64748b', fontSize: 11 },
+          barMaxWidth: 16
+        }]
+      });
+    }
+    renderBarApac(DATA.countries.apac);
+
+    // ── Bar West ──
+    const barWest = echarts.init(document.getElementById('bar-west'));
+    function renderBarWest(data) {
+      barWest.setOption({
+        backgroundColor: dark.bg,
+        tooltip: { ...dark.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (p) => `${p[0].name}: <b>${p[0].value}%</b>` },
+        grid: { top: 8, right: 48, bottom: 8, left: 8, containLabel: true },
+        xAxis: { type: 'value', max: 90, axisLabel: { color: '#475569', fontSize: 10, formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } } },
+        yAxis: { type: 'category', data: data.names, axisLabel: { color: '#94a3b8', fontSize: 11 }, axisTick: { show: false } },
+        series: [{
+          type: 'bar',
+          data: data.vals.map((v, i) => ({
+            value: v,
+            itemStyle: { color: i === data.vals.length - 1 ? '#3b82f6' : 'rgba(59,130,246,0.4)', borderRadius: [0, 4, 4, 0] }
+          })),
+          label: { show: true, position: 'right', formatter: '{c}%', color: '#64748b', fontSize: 11 },
+          barMaxWidth: 16
+        }]
+      });
+    }
+    renderBarWest(DATA.countries.west);
+
+    // ── Generation Chart ──
+    const genChart = echarts.init(document.getElementById('gen-chart'));
+    function renderGenChart() {
+      genChart.setOption({
+        backgroundColor: dark.bg,
+        tooltip: { ...dark.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (p) => `${p[0].name}: <b>${p[0].value}%</b>` },
+        grid: { top: 8, right: 48, bottom: 8, left: 16, containLabel: true },
+        xAxis: { type: 'value', max: 90, axisLabel: { color: '#475569', fontSize: 10, formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } } },
+        yAxis: { type: 'category', data: DATA.generation.labels, axisLabel: { color: '#94a3b8', fontSize: 11, lineHeight: 18 }, axisTick: { show: false } },
+        series: [{
+          type: 'bar',
+          data: DATA.generation.vals.map((v, i) => ({
+            value: v,
+            itemStyle: { color: DATA.generation.colors[i], borderRadius: [0, 4, 4, 0] }
+          })),
+          label: { show: true, position: 'right', formatter: '{c}%', color: '#64748b', fontSize: 11 },
+          barMaxWidth: 22,
+          barCategoryGap: '40%'
+        }]
+      });
+    }
+    renderGenChart();
+
+    // ── Tab switching ──
+    let currentTab = 'countries';
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      if (tab === 'countries') {
+        document.getElementById('ring-title').textContent = '使用场景分布';
+        document.getElementById('ring-sub').textContent = '按用途类别占比';
+        renderRingUsecase();
+        renderBarApac(DATA.countries.apac);
+        renderBarWest(DATA.countries.west);
+        document.querySelector('[onclick="switchTab(\'countries\')"]').closest('.chart-grid-3').children[0].querySelector('.card-title').textContent = '国家排名（亚太）';
+        document.querySelector('[onclick="switchTab(\'countries\')"]').closest('.chart-grid-3').children[1].querySelector('.card-title').textContent = '国家排名（欧美）';
+      } else if (tab === 'generation') {
+        document.getElementById('ring-title').textContent = '代际渗透率';
+        document.getElementById('ring-sub').textContent = '各年龄段占比对比';
+        ringChart.setOption({
+          backgroundColor: 'transparent',
+          tooltip: { ...dark.tooltip, trigger: 'item', formatter: '{b}: {c}%' },
+          series: [{
+            type: 'pie', radius: ['42%', '68%'],
+            data: DATA.generation.labels.map((l, i) => ({
+              name: l.replace('\n', ' '),
+              value: DATA.generation.vals[i],
+              itemStyle: { color: DATA.generation.colors[i] }
+            })),
+            borderRadius: 0,
+            label: { show: true, color: '#64748b', fontSize: 11, formatter: '{b}\n{c}%' },
+            labelLine: { lineStyle: { color: '#334155' } }
+          }]
+        });
+        // Redraw bar charts for generation
+        barApac.setOption({
+          yAxis: { data: DATA.generation.labels },
+          series: [{ data: [21, 36, 55, 71, 76].map((v, i) => ({ value: v, itemStyle: { color: DATA.generation.colors[i], borderRadius: [0, 4, 4, 0] } })) }]
+        });
+        barWest.setOption({ series: [{ data: [] }], yAxis: { data: [] } });
+      } else if (tab === 'usecase') {
+        document.getElementById('ring-title').textContent = '增长对比';
+        document.getElementById('ring-sub').textContent = '各场景使用率';
+        renderRingUsecase();
+        barApac.setOption({
+          yAxis: { data: DATA.usecase.labels },
+          series: [{
+            data: DATA.usecase.vals.map((v, i) => ({
+              value: v,
+              itemStyle: { color: i === 5 ? '#10b981' : 'rgba(16,185,129,0.4)', borderRadius: [0, 4, 4, 0] }
+            }))
+          }]
+        });
+        barWest.setOption({ series: [{ data: [] }], yAxis: { data: [] } });
+      }
+    }
+
+    // ── Resize ──
+    window.addEventListener('resize', () => {
+      [trendChart, ringChart, barApac, barWest, genChart].forEach(c => c.resize());
+    });
+  </script>
+</body>
+</html>

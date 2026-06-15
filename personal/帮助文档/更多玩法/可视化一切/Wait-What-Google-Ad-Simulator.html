@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AI Workspace - Google Search</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #fff;
+    color: #202124;
+    font-size: 14px;
+    line-height: 1.58;
+  }
+
+  /* ── Header ── */
+  .g-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    border-bottom: 1px solid #ebebeb;
+    padding: 14px 16px 10px;
+  }
+  .g-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    max-width: 1200px;
+  }
+  .g-logo {
+    flex-shrink: 0;
+  }
+  .g-logo svg { display: block; width: 92px; height: 30px; }
+
+  .g-searchbar {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 692px;
+    height: 44px;
+    border: 1px solid #dfe1e5;
+    border-radius: 24px;
+    padding: 0 14px 0 20px;
+    gap: 12px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    cursor: text;
+    transition: box-shadow 0.2s;
+  }
+  .g-searchbar:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .g-searchbar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    color: #202124;
+    font-family: Arial, sans-serif;
+    background: transparent;
+  }
+  .g-searchbar-icons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .g-searchbar-icons svg {
+    width: 20px; height: 20px;
+    fill: #9aa0a6;
+    cursor: pointer;
+  }
+  .g-searchbar-icons svg:hover { fill: #4285f4; }
+  .g-search-divider {
+    width: 1px; height: 24px;
+    background: #dfe1e5;
+  }
+  .g-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .g-apps-btn, .g-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .g-apps-btn:hover { background: #e8eaed; }
+  .g-avatar { background: #4285f4; font-size: 13px; font-weight: 700; color: #fff; }
+
+  /* ── Tabs ── */
+  .g-tabs {
+    background: #fff;
+    border-bottom: 1px solid #ebebeb;
+    padding: 0 160px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .g-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #5f6368;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .g-tab:hover { color: #202124; }
+  .g-tab.active {
+    color: #1a73e8;
+    border-bottom-color: #1a73e8;
+    font-weight: 500;
+  }
+  .g-tab svg { width: 16px; height: 16px; }
+
+  /* ── Body ── */
+  .g-body {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 0 0 160px;
+  }
+  .g-main {
+    width: 652px;
+    padding-top: 18px;
+  }
+  .g-sidebar {
+    flex: 1;
+    padding: 24px 0 0 52px;
+  }
+
+  /* ── Result count ── */
+  .g-result-count {
+    font-size: 13px;
+    color: #70757a;
+    margin-bottom: 16px;
+  }
+
+  /* ── Ad ── */
+  .g-ad {
+    margin-bottom: 24px;
+  }
+  .g-ad-label {
+    display: inline-block;
+    font-size: 11px;
+    color: #202124;
+    border: 1px solid #70757a;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-bottom: 4px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+  .g-ad-url-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+  .g-favicon {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #e8eaed;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 9px;
+    font-weight: 700;
+    overflow: hidden;
+  }
+  .g-favicon img { width: 100%; height: 100%; object-fit: cover; }
+  .g-ad-site-name {
+    font-size: 14px;
+    color: #202124;
+    font-weight: 500;
+  }
+  .g-ad-domain {
+    font-size: 12px;
+    color: #202124;
+  }
+  .g-ad-title {
+    font-size: 20px;
+    color: #1a0dab;
+    font-weight: 400;
+    cursor: pointer;
+    line-height: 1.3;
+    margin-bottom: 2px;
+  }
+  .g-ad-title:hover { text-decoration: underline; }
+  .g-ad-desc {
+    font-size: 14px;
+    color: #4d5156;
+    line-height: 1.58;
+  }
+  .g-ad-sitelinks {
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .g-ad-sitelink {
+    color: #1a0dab;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 12px 6px 0;
+    line-height: 1.3;
+    border-right: 1px solid #dadce0;
+    margin-right: 12px;
+  }
+  .g-ad-sitelink:last-child { border-right: none; }
+  .g-ad-sitelink:hover { text-decoration: underline; }
+  .g-ad-sitelink small {
+    display: block;
+    font-size: 12px;
+    color: #4d5156;
+    font-weight: 400;
+  }
+
+  /* ── Organic Result ── */
+  .g-result {
+    margin-bottom: 28px;
+  }
+  .g-result-url-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+  .g-result-site-name {
+    font-size: 14px;
+    color: #202124;
+    font-weight: 500;
+  }
+  .g-result-domain {
+    font-size: 12px;
+    color: #4d5156;
+  }
+  .g-result-title {
+    font-size: 20px;
+    color: #1a0dab;
+    font-weight: 400;
+    cursor: pointer;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .g-result-title:hover { text-decoration: underline; }
+  .g-result-desc {
+    font-size: 14px;
+    color: #4d5156;
+    line-height: 1.58;
+  }
+  .g-result-desc b { color: #202124; font-weight: 700; }
+
+  /* ── Divider ── */
+  .g-section-divider {
+    border: none;
+    border-top: 1px solid #ebebeb;
+    margin: 8px 0 24px;
+  }
+
+  /* ── People Also Ask ── */
+  .g-paa {
+    margin-bottom: 28px;
+  }
+  .g-paa-title {
+    font-size: 20px;
+    font-weight: 400;
+    color: #202124;
+    margin-bottom: 8px;
+  }
+  .g-paa-item {
+    border: 1px solid #dfe1e5;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    overflow: hidden;
+  }
+  .g-paa-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #202124;
+    background: #fff;
+  }
+  .g-paa-question:hover { background: #f8f9fa; }
+  .g-paa-chevron {
+    font-size: 10px;
+    color: #70757a;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  /* ── Sidebar Knowledge Panel ── */
+  .g-kp {
+    border: 1px solid #dfe1e5;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 380px;
+  }
+  .g-kp-name {
+    font-size: 28px;
+    font-weight: 400;
+    color: #202124;
+    margin-bottom: 4px;
+  }
+  .g-kp-type {
+    font-size: 14px;
+    color: #70757a;
+    margin-bottom: 16px;
+  }
+  .g-kp-img {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    object-fit: cover;
+    height: 180px;
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+  }
+  .g-kp-desc {
+    font-size: 14px;
+    color: #4d5156;
+    line-height: 1.58;
+    margin-bottom: 16px;
+  }
+  .g-kp-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .g-kp-label {
+    color: #202124;
+    font-weight: 500;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+  .g-kp-value { color: #4d5156; }
+  .g-kp-value a { color: #1a0dab; text-decoration: none; }
+  .g-kp-value a:hover { text-decoration: underline; }
+  .g-kp-divider { border: none; border-top: 1px solid #ebebeb; margin: 12px 0; }
+  .g-kp-feedback {
+    font-size: 12px;
+    color: #70757a;
+    margin-top: 12px;
+    cursor: pointer;
+  }
+  .g-kp-feedback:hover { text-decoration: underline; }
+
+  /* ── Footer ── */
+  .g-footer {
+    border-top: 1px solid #ebebeb;
+    padding: 16px 160px;
+    margin-top: 40px;
+    background: #f2f2f2;
+  }
+  .g-footer-top {
+    font-size: 14px;
+    color: #70757a;
+    margin-bottom: 12px;
+  }
+  .g-footer-links {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .g-footer-links a {
+    font-size: 13px;
+    color: #70757a;
+    text-decoration: none;
+  }
+  .g-footer-links a:hover { text-decoration: underline; }
+
+  /* ── Moxt badge in favicon ── */
+  .favicon-moxt { background: #29C16A; color: #fff; font-size: 9px; font-weight: 800; }
+  .favicon-notion { background: #000; color: #fff; font-size: 9px; font-weight: 800; }
+  .favicon-linear { background: #5E6AD2; color: #fff; font-size: 9px; font-weight: 800; }
+  .favicon-click { background: #7B68EE; color: #fff; font-size: 9px; font-weight: 800; }
+  .favicon-coda { background: #E84F36; color: #fff; font-size: 9px; font-weight: 800; }
+  .favicon-ms { background: #0078D4; color: #fff; font-size: 9px; font-weight: 800; }
+  .favicon-g { background: #4285f4; color: #fff; font-size: 9px; font-weight: 800; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="g-header">
+  <div class="g-header-inner">
+    <div class="g-logo">
+      <!-- Google logo SVG -->
+      <svg viewBox="0 0 272 92" xmlns="http://www.w3.org/2000/svg">
+        <path d="M115.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18C71.25 34.32 81.24 25 93.5 25s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44S80.99 39.2 80.99 47.18c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" fill="#EA4335"/>
+        <path d="M163.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18c0-12.85 9.99-22.18 22.25-22.18s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44s-12.51 5.46-12.51 13.44c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" fill="#FBBC05"/>
+        <path d="M209.75 26.34v39.82c0 16.38-9.66 23.07-21.08 23.07-10.75 0-17.22-7.19-19.66-13.07l8.48-3.53c1.51 3.61 5.21 7.87 11.17 7.87 7.31 0 11.84-4.51 11.84-13v-3.19h-.34c-2.18 2.69-6.38 5.04-11.68 5.04-11.09 0-21.25-9.66-21.25-22.09 0-12.52 10.16-22.26 21.25-22.26 5.29 0 9.49 2.35 11.68 4.96h.34v-3.61h9.25zm-8.56 20.92c0-7.81-5.21-13.52-11.84-13.52-6.72 0-12.35 5.71-12.35 13.52 0 7.73 5.63 13.36 12.35 13.36 6.63 0 11.84-5.63 11.84-13.36z" fill="#4285F4"/>
+        <path d="M225 3v65h-9.5V3h9.5z" fill="#34A853"/>
+        <path d="M262.02 54.48l7.56 5.04c-2.44 3.61-8.32 9.83-18.48 9.83-12.6 0-22.01-9.74-22.01-22.18 0-13.19 9.49-22.18 20.92-22.18 11.51 0 17.14 9.16 18.98 14.11l1.01 2.52-29.65 12.28c2.27 4.45 5.8 6.72 10.75 6.72 4.96 0 8.4-2.44 10.92-6.14zm-23.27-7.98l19.82-8.23c-1.09-2.77-4.37-4.7-8.23-4.7-4.95 0-11.84 4.37-11.59 12.93z" fill="#EA4335"/>
+        <path d="M35.29 41.41V32h31.3c.31 1.6.47 3.49.47 5.54 0 6.89-1.88 15.41-7.96 21.49-5.9 6.17-13.44 9.45-23.48 9.45C16.32 68.48 0 52.69 0 33.33 0 13.97 16.32 0 35.62 0c10.28 0 17.59 4.03 23.09 9.21l-6.5 6.5c-3.95-3.71-9.29-6.59-16.59-6.59-13.55 0-24.14 10.9-24.14 24.21s10.59 24.21 24.14 24.21c8.79 0 13.81-3.53 17.02-6.75 2.61-2.61 4.33-6.33 5.01-11.42H35.29z" fill="#4285F4"/>
+      </svg>
+    </div>
+
+    <div class="g-searchbar">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#9aa0a6;flex-shrink:0"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input type="text" value="The AI Workspace" readonly />
+      <div class="g-searchbar-icons">
+        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+        <div class="g-search-divider"></div>
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      </div>
+    </div>
+
+    <div class="g-header-right">
+      <div class="g-apps-btn">
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#5f6368"><path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6-12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      </div>
+      <div class="g-avatar">R</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tabs ── -->
+<div class="g-tabs">
+  <a class="g-tab active" href="#">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2h6l2 2h4v16H3V4h4zm0 2H5v14h14V6h-3.17L14 4H10L8.17 6H7v-.83zm3 3a5 5 0 1 1 0 10A5 5 0 0 1 12 7zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+    All
+  </a>
+  <a class="g-tab" href="#">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+    Images
+  </a>
+  <a class="g-tab" href="#">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+    Videos
+  </a>
+  <a class="g-tab" href="#">News</a>
+  <a class="g-tab" href="#">Shopping</a>
+  <a class="g-tab" href="#">More</a>
+  <span style="margin-left:auto"></span>
+  <a class="g-tab" href="#">Tools</a>
+</div>
+
+<!-- ── Body ── -->
+<div class="g-body">
+  <div class="g-main">
+
+    <div class="g-result-count">About 4,230,000,000 results (0.42 seconds)</div>
+
+    <!-- ══ AD 1: Moxt — Big Ad with Sitelinks ══ -->
+    <div class="g-ad">
+      <span class="g-ad-label">Sponsored</span>
+      <div class="g-ad-url-row">
+        <div class="g-favicon favicon-moxt">M</div>
+        <div>
+          <div class="g-ad-site-name">Moxt</div>
+          <div class="g-ad-domain">https://moxt.ai › ai-workspace</div>
+        </div>
+      </div>
+      <div class="g-ad-title">Moxt — The AI-Native Workspace · Work With AI Like a Team</div>
+      <div class="g-ad-desc">
+        Finally, a workspace built for the AI era. Every file is AI-readable. Every agent has its own cloud computer. Your entire team — human and AI — working from the same source of truth. <b>Start free.</b>
+      </div>
+      <div class="g-ad-sitelinks">
+        <div class="g-ad-sitelink">
+          Get Started Free
+          <small>No credit card required</small>
+        </div>
+        <div class="g-ad-sitelink">
+          Meet momo
+          <small>Your personal AI co-worker</small>
+        </div>
+        <div class="g-ad-sitelink">
+          See it in action
+          <small>Live demo, no signup</small>
+        </div>
+        <div class="g-ad-sitelink">
+          Import from Notion
+          <small>Takes under 2 minutes</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ AD 2: Moxt — Second Ad ══ -->
+    <div class="g-ad">
+      <span class="g-ad-label">Sponsored</span>
+      <div class="g-ad-url-row">
+        <div class="g-favicon favicon-moxt">M</div>
+        <div>
+          <div class="g-ad-site-name">Moxt</div>
+          <div class="g-ad-domain">https://moxt.ai › momo</div>
+        </div>
+      </div>
+      <div class="g-ad-title">Meet momo — Your AI Co-Worker That Actually Knows Your Business</div>
+      <div class="g-ad-desc">
+        momo reads every doc, remembers every decision, and works while you sleep. Assign a task, skip the context dump. The more you work together, the smarter it gets.
+      </div>
+    </div>
+
+    <!-- ══ AD 3: Notion AI (competitor) ══ -->
+    <div class="g-ad">
+      <span class="g-ad-label">Sponsored</span>
+      <div class="g-ad-url-row">
+        <div class="g-favicon favicon-notion">N</div>
+        <div>
+          <div class="g-ad-site-name">Notion</div>
+          <div class="g-ad-domain">https://notion.so › ai-workspace</div>
+        </div>
+      </div>
+      <div class="g-ad-title">Notion AI — Write, Plan & Organize with Built-in AI</div>
+      <div class="g-ad-desc">
+        Notion's connected workspace now with AI built in. Write faster, summarize meetings, and generate content. Trusted by 30M+ teams worldwide.
+      </div>
+    </div>
+
+    <hr class="g-section-divider" />
+
+    <!-- ══ People Also Ask ══ -->
+    <div class="g-paa">
+      <div class="g-paa-title">People also ask</div>
+      <div class="g-paa-item">
+        <div class="g-paa-question">
+          What is the best AI workspace for teams in 2025?
+          <span class="g-paa-chevron">▼</span>
+        </div>
+      </div>
+      <div class="g-paa-item">
+        <div class="g-paa-question">
+          How is Moxt different from Notion or Confluence?
+          <span class="g-paa-chevron">▼</span>
+        </div>
+      </div>
+      <div class="g-paa-item">
+        <div class="g-paa-question">
+          Can AI agents work directly in a shared workspace?
+          <span class="g-paa-chevron">▼</span>
+        </div>
+      </div>
+      <div class="g-paa-item">
+        <div class="g-paa-question">
+          What does "AI-native workspace" mean?
+          <span class="g-paa-chevron">▼</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Organic 1: Moxt.ai ══ -->
+    <div class="g-result">
+      <div class="g-result-url-row">
+        <div class="g-favicon favicon-moxt">M</div>
+        <div>
+          <div class="g-result-site-name">Moxt</div>
+          <div class="g-result-domain">https://moxt.ai</div>
+        </div>
+      </div>
+      <div class="g-result-title">Moxt — The AI-Native Workspace for Human-AI Teams</div>
+      <div class="g-result-desc">
+        Moxt is the first workspace built for the AI era — where humans and AI agents share the same environment, files, and context. Every AI has its own cloud computer. Every file is in a format AI can truly read.
+      </div>
+    </div>
+
+    <!-- ══ Organic 2: TechCrunch review ══ -->
+    <div class="g-result">
+      <div class="g-result-url-row">
+        <div class="g-favicon" style="background:#e4f2ff;color:#e63946;font-size:9px;font-weight:800;">TC</div>
+        <div>
+          <div class="g-result-site-name">TechCrunch</div>
+          <div class="g-result-domain">https://techcrunch.com › 2025 › the-ai-workspace-tools-ranked</div>
+        </div>
+      </div>
+      <div class="g-result-title">The Best AI Workspace Tools of 2025, Ranked</div>
+      <div class="g-result-desc">
+        <b>AI workspaces</b> have exploded in the past year. We tested 14 products — from legacy tools bolting on AI features to purpose-built platforms like <b>Moxt</b>. Here's what actually makes the cut for modern teams managing real AI workflows...
+      </div>
+    </div>
+
+    <!-- ══ Organic 3: Notion ══ -->
+    <div class="g-result">
+      <div class="g-result-url-row">
+        <div class="g-favicon favicon-notion">N</div>
+        <div>
+          <div class="g-result-site-name">Notion</div>
+          <div class="g-result-domain">https://notion.so › product › ai</div>
+        </div>
+      </div>
+      <div class="g-result-title">Notion AI — Connected Workspace with Integrated AI</div>
+      <div class="g-result-desc">
+        Notion combines your wiki, docs, projects, and now AI in one tool. Use AI to write, summarize, translate, and get answers from across your workspace. Free for personal use.
+      </div>
+    </div>
+
+    <!-- ══ Organic 4: Linear ══ -->
+    <div class="g-result">
+      <div class="g-result-url-row">
+        <div class="g-favicon favicon-linear">L</div>
+        <div>
+          <div class="g-result-site-name">Linear</div>
+          <div class="g-result-domain">https://linear.app › ai</div>
+        </div>
+      </div>
+      <div class="g-result-title">Linear — The AI-Powered Issue Tracker for Software Teams</div>
+      <div class="g-result-desc">
+        Linear uses AI to auto-triage issues, write specs, and predict blockers. Purpose-built for engineering teams who want speed without the noise. Used by 10,000+ companies.
+      </div>
+    </div>
+
+    <!-- ══ Organic 5: G2 Comparison ══ -->
+    <div class="g-result">
+      <div class="g-result-url-row">
+        <div class="g-favicon" style="background:#FF492C;color:#fff;font-size:9px;font-weight:800;">G2</div>
+        <div>
+          <div class="g-result-site-name">G2</div>
+          <div class="g-result-domain">https://g2.com › categories › ai-workspace</div>
+        </div>
+      </div>
+      <div class="g-result-title">Best AI Workspace Software 2025 — G2</div>
+      <div class="g-result-desc">
+        Compare the best <b>AI workspace</b> software. Read verified user reviews, explore features, and find the right product for your team. Top products: Moxt, Notion AI, ClickUp Brain, Coda AI, Microsoft Copilot.
+      </div>
+    </div>
+
+    <!-- ══ Organic 6: ClickUp ══ -->
+    <div class="g-result">
+      <div class="g-result-url-row">
+        <div class="g-favicon favicon-click">C</div>
+        <div>
+          <div class="g-result-site-name">ClickUp</div>
+          <div class="g-result-domain">https://clickup.com › features › ai</div>
+        </div>
+      </div>
+      <div class="g-result-title">ClickUp Brain — The AI Workspace That Does Everything</div>
+      <div class="g-result-desc">
+        ClickUp Brain connects your tasks, docs, people, and company knowledge — then adds AI on top. Ask questions, auto-write docs, and get smart recommendations across your whole workspace.
+      </div>
+    </div>
+
+    <!-- ══ Organic 7: Microsoft Copilot ══ -->
+    <div class="g-result">
+      <div class="g-result-url-row">
+        <div class="g-favicon favicon-ms">M</div>
+        <div>
+          <div class="g-result-site-name">Microsoft</div>
+          <div class="g-result-domain">https://microsoft.com › en-us › microsoft-365 › copilot</div>
+        </div>
+      </div>
+      <div class="g-result-title">Microsoft 365 Copilot — AI Across Your Entire Workspace</div>
+      <div class="g-result-desc">
+        Copilot in Microsoft 365 brings AI to Word, Excel, PowerPoint, Outlook, and Teams. Work smarter, not harder — with an AI that understands your organization's data.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Sidebar ── -->
+  <div class="g-sidebar">
+    <div class="g-kp">
+      <div class="g-kp-name">Moxt</div>
+      <div class="g-kp-type">AI-Native Workspace · Software Company</div>
+      <div class="g-kp-img">🤖</div>
+      <div class="g-kp-desc">
+        Moxt is an AI-native workspace where humans and AI agents work together in a shared environment. Unlike traditional tools with AI bolted on, Moxt is built from the ground up for human-AI collaboration — with every file in AI-readable formats, and every AI agent equipped with its own cloud computer.
+      </div>
+      <hr class="g-kp-divider" />
+      <div class="g-kp-row">
+        <div class="g-kp-label">Website</div>
+        <div class="g-kp-value"><a href="#">moxt.ai</a></div>
+      </div>
+      <div class="g-kp-row">
+        <div class="g-kp-label">Founded</div>
+        <div class="g-kp-value">2024</div>
+      </div>
+      <div class="g-kp-row">
+        <div class="g-kp-label">Headquarters</div>
+        <div class="g-kp-value">San Francisco, CA</div>
+      </div>
+      <div class="g-kp-row">
+        <div class="g-kp-label">Key product</div>
+        <div class="g-kp-value">momo (personal AI co-worker)</div>
+      </div>
+      <hr class="g-kp-divider" />
+      <div class="g-kp-row">
+        <div class="g-kp-label">Pricing</div>
+        <div class="g-kp-value">Free tier available · Teams from $20/mo</div>
+      </div>
+      <div class="g-kp-feedback">Suggest an edit · Feedback</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<div class="g-footer">
+  <div class="g-footer-top">United States — Based on your current location. Update location</div>
+  <div class="g-footer-links">
+    <a href="#">Help</a>
+    <a href="#">Send feedback</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+  </div>
+</div>
+
+</body>
+</html>

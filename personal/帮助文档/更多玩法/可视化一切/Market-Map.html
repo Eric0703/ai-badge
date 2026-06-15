@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Map — Briefr.ai</title>
+<style>
+  :root {
+    --bg: #080a12; --surface: #12151f; --border: #1e2133;
+    --text: #e2e8f0; --muted: #4a5470; --muted2: #6b7594;
+    --green: #22c55e; --red: #ef4444; --yellow: #f59e0b;
+    --blue: #3b82f6; --purple: #a855f7; --accent: #6366f1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+  body { display: flex; flex-direction: column; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+  .header {
+    padding: 20px 40px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .header-left h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-left h1 span { color: var(--accent); }
+  .header-left .sub { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .pill { padding: 5px 12px; border-radius: 6px; font-size: 11px; }
+  .pill-accent { background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); color: var(--accent); }
+  .pill-accent span { font-weight: 700; }
+  .pill-muted { color: var(--muted2); background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+
+  .canvas { flex: 1; position: relative; overflow: hidden; }
+  .grid-h { position: absolute; left: 64px; right: 64px; top: 50%; height: 1px; background: rgba(255,255,255,0.07); }
+  .grid-v { position: absolute; top: 32px; bottom: 32px; left: 50%; width: 1px; background: rgba(255,255,255,0.07); }
+  .ax { position: absolute; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.9px; color: var(--muted); pointer-events: none; }
+  .ax-top    { top: 10px; left: 50%; transform: translateX(-50%); }
+  .ax-bottom { bottom: 10px; left: 50%; transform: translateX(-50%); }
+  .ax-left   { left: 8px; top: 50%; transform: translateY(-50%) rotate(-90deg); white-space: nowrap; }
+  .ax-right  { right: 8px; top: 50%; transform: translateY(-50%) rotate(90deg); white-space: nowrap; }
+  .qlabel { position: absolute; font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600; color: rgba(255,255,255,0.05); pointer-events: none; }
+
+  .co { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: default; }
+  .co-bubble { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid transparent; transition: transform 0.2s, box-shadow 0.2s; position: relative; }
+  .co:hover .co-bubble { transform: scale(1.08); }
+  .co-name { font-size: 14px; font-weight: 700; white-space: nowrap; text-align: center; }
+  .co-meta { font-size: 10px; color: var(--muted2); text-align: center; white-space: nowrap; line-height: 1.4; }
+
+  .co.briefr .co-bubble { width: 76px; height: 76px; font-size: 22px; background: rgba(99,102,241,0.18); border-color: var(--accent); box-shadow: 0 0 48px rgba(99,102,241,0.35), 0 0 96px rgba(99,102,241,0.1); color: white; }
+  .co.briefr .co-name { color: white; font-size: 16px; }
+  .here-badge { position: absolute; top: -5px; right: -5px; background: var(--accent); color: white; font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; }
+
+  .co.dovetail .co-bubble { width: 68px; height: 68px; font-size: 18px; background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.6); box-shadow: 0 0 32px rgba(168,85,247,0.2); color: #d8b4fe; }
+  .co.dovetail .co-name { color: #d8b4fe; }
+
+  .co.looppanel .co-bubble { width: 48px; height: 48px; font-size: 13px; background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.35); color: #86efac; }
+  .co.marvin .co-bubble    { width: 42px; height: 42px; font-size: 12px; background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); color: #fde68a; }
+  .co.notably .co-bubble   { width: 40px; height: 40px; font-size: 12px; background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.28); color: #93c5fd; }
+  .co.condens .co-bubble   { width: 38px; height: 38px; font-size: 11px; background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.22); color: #93c5fd; }
+  .co.maze .co-bubble      { width: 46px; height: 46px; font-size: 13px; background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.28); color: #fca5a5; }
+  .co.sprig .co-bubble     { width: 44px; height: 44px; font-size: 12px; background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.28); color: #86efac; }
+  .co.usertesting .co-bubble { width: 42px; height: 42px; font-size: 11px; background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: #fde68a; }
+  .co.notion .co-bubble    { width: 36px; height: 36px; font-size: 11px; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #94a3b8; }
+  .co.chatgpt .co-bubble   { width: 34px; height: 34px; font-size: 11px; background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.16); color: #86efac; }
+
+  .callout { position: absolute; border-radius: 5px; padding: 4px 8px; font-size: 10px; white-space: nowrap; pointer-events: none; }
+  .c-purple { background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); color: #d8b4fe; }
+  .c-muted  { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--muted2); }
+
+  .opp-zone { position: absolute; border: 1.5px dashed rgba(34,197,94,0.18); border-radius: 8px; background: rgba(34,197,94,0.025); pointer-events: none; }
+  .opp-label { position: absolute; font-size: 9px; color: rgba(34,197,94,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; pointer-events: none; }
+
+  .footer { padding: 11px 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .bet { font-size: 11px; color: var(--muted2); max-width: 660px; line-height: 1.5; }
+  .bet strong { color: var(--text); }
+  .moat-tags { display: flex; gap: 6px; }
+  .moat-tag { font-size: 9px; padding: 3px 8px; border-radius: 3px; font-weight: 600; background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Briefr<span>.ai</span> — Competitive Landscape</h1>
+    <div class="sub">UX research &amp; AI synthesis tools · March 2025 · Funding data verified via Crunchbase / public sources</div>
+  </div>
+  <div class="header-right">
+    <div class="pill pill-accent">TAM: <span>~340,000</span> freelance UX professionals globally</div>
+    <div class="pill pill-muted">Bubble size ≈ relative scale / funding</div>
+  </div>
+</div>
+
+<div class="canvas">
+  <div class="grid-h"></div>
+  <div class="grid-v"></div>
+
+  <div class="ax ax-top">AI-First · Report / Synthesis Output</div>
+  <div class="ax ax-bottom">General Purpose AI · No UX Specialization</div>
+  <div class="ax ax-left">Solo Practitioner</div>
+  <div class="ax ax-right">Teams &amp; Enterprise</div>
+
+  <div class="qlabel" style="top:42px; left:72px;">Solo · AI Output</div>
+  <div class="qlabel" style="top:42px; right:72px;">Teams · AI Output</div>
+  <div class="qlabel" style="bottom:42px; left:72px;">Solo · General</div>
+  <div class="qlabel" style="bottom:42px; right:72px;">Enterprise · Legacy</div>
+
+  <!-- Opportunity zone — subtle background only, label at bottom edge -->
+  <div class="opp-zone" style="left:50%; top:7%; width:43%; height:43%;"></div>
+  <div class="opp-label" style="left:52%; top:8%;">Expansion territory</div>
+
+  <!-- BRIEFR — solo AI report output — far left, mid-upper -->
+  <div class="co briefr" style="left:10%; top:30%;">
+    <div class="co-bubble">B<div class="here-badge">You</div></div>
+    <div class="co-name">Briefr.ai</div>
+    <div class="co-meta">73 customers · $6,347 MRR<br>Report output for solo UX</div>
+  </div>
+
+  <!-- LOOPPANEL — upper-left, well separated -->
+  <div class="co looppanel" style="left:25%; top:13%;">
+    <div class="co-bubble">LP</div>
+    <div class="co-name">Looppanel</div>
+    <div class="co-meta">AI interview notes &amp; insights<br>PH #1 Day</div>
+  </div>
+
+  <!-- MARVIN — mid canvas, staggered lower -->
+  <div class="co marvin" style="left:41%; top:33%;">
+    <div class="co-bubble">Mv</div>
+    <div class="co-name">Marvin</div>
+    <div class="co-meta">AI research ops platform<br>heymarvin.com · est. 2022</div>
+  </div>
+
+  <!-- NOTABLY — mid-right, upper row -->
+  <div class="co notably" style="left:57%; top:22%;">
+    <div class="co-bubble">Nt</div>
+    <div class="co-name">Notably</div>
+    <div class="co-meta">$1.5M seed · AI repository<br>notably.ai</div>
+  </div>
+
+  <!-- CONDENS — right, lower -->
+  <div class="co condens" style="left:66%; top:41%;">
+    <div class="co-bubble">Cd</div>
+    <div class="co-name">Condens</div>
+    <div class="co-meta">Research repository<br>Small teams → enterprise</div>
+  </div>
+
+  <!-- SPRIG — right, upper-mid — staggered from Notably -->
+  <div class="co sprig" style="left:74%; top:24%;">
+    <div class="co-bubble">Sp</div>
+    <div class="co-name">Sprig</div>
+    <div class="co-meta">AI product surveys &amp; insights<br>$40M+ raised</div>
+  </div>
+
+  <!-- MAZE — far right, mid — staggered from Sprig -->
+  <div class="co maze" style="left:83%; top:38%;">
+    <div class="co-bubble">Mz</div>
+    <div class="co-name">Maze</div>
+    <div class="co-meta">Usability testing + AI<br>$40M+ raised</div>
+  </div>
+
+  <!-- DOVETAIL — far right, upper corner -->
+  <div class="co dovetail" style="left:88%; top:14%;">
+    <div class="co-bubble">D</div>
+    <div class="co-name">Dovetail</div>
+    <div class="co-meta">$86.9M raised · 115+ staff<br>Amazon, Meta, Canva</div>
+  </div>
+
+  <!-- USERTESTING — far right, lower half -->
+  <div class="co usertesting" style="left:87%; top:60%;">
+    <div class="co-bubble">UT</div>
+    <div class="co-name">UserTesting</div>
+    <div class="co-meta">Legacy enterprise · taken private<br>usertesting.com</div>
+  </div>
+
+  <!-- NOTION AI — lower-left area -->
+  <div class="co notion" style="left:28%; top:74%;">
+    <div class="co-bubble">N</div>
+    <div class="co-name">Notion AI</div>
+    <div class="co-meta">General writing assistant<br>Not UX-specific</div>
+  </div>
+
+  <!-- CHATGPT — far lower-left -->
+  <div class="co chatgpt" style="left:10%; top:82%;">
+    <div class="co-bubble">G</div>
+    <div class="co-name">ChatGPT</div>
+    <div class="co-meta">Copy-paste workflow<br>No UX layer</div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <div class="bet">
+    <strong>Key finding:</strong> Dovetail ($86.9M, Accel) dominates teams and enterprise — too complex and expensive for solo practitioners.
+    Looppanel and Marvin overlap Briefr's quadrant but focus on <em>interview capture</em>, not <em>report delivery</em>.
+    <strong>Briefr's open lane:</strong> polished 20-min report output for solo UX practitioners. Nobody else owns this specific job-to-be-done at this price point.
+  </div>
+  <div class="moat-tags">
+    <div class="moat-tag">Report output focus</div>
+    <div class="moat-tag">Solo workflow depth</div>
+    <div class="moat-tag">Prompt v4 quality</div>
+    <div class="moat-tag">Price gap vs Dovetail</div>
+  </div>
+</div>
+
+</body>
+</html>

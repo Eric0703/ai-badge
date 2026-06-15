@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Evidence Map — Chen Lab</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080e1a;
+    color: #e2e8f0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+  /* HEADER */
+  .header {
+    padding: 16px 24px 12px;
+    border-bottom: 1px solid #1e2d45;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0b1220;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: #0ea5e9; box-shadow: 0 0 8px #0ea5e9aa; }
+  .logo-name { font-size: 13px; font-weight: 600; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; }
+  .divider { width: 1px; height: 24px; background: #1e2d45; }
+  .page-title { font-size: 17px; font-weight: 700; color: #f1f5f9; }
+  .page-sub { font-size: 12px; color: #475569; margin-top: 2px; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 0;
+    flex-shrink: 0;
+    border-bottom: 1px solid #1e2d45;
+    background: #0b1220;
+  }
+  .stat {
+    padding: 10px 24px;
+    border-right: 1px solid #1e2d45;
+    display: flex;
+    flex-direction: column;
+  }
+  .stat-value { font-size: 20px; font-weight: 800; color: #f1f5f9; line-height: 1; }
+  .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+  .stat-value.red { color: #f87171; }
+  .gap-stat {
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .gap-badge {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gap-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #ef4444;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* MAP AREA */
+  .map-wrap {
+    flex: 1;
+    display: flex;
+    position: relative;
+    min-height: 0;
+  }
+  #evidence-map { flex: 1; }
+
+  /* LEGEND */
+  .legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(11, 18, 32, 0.92);
+    border: 1px solid #1e2d45;
+    border-radius: 10px;
+    padding: 14px 16px;
+    backdrop-filter: blur(8px);
+  }
+  .legend-title { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-label { font-size: 11px; color: #94a3b8; }
+
+  /* HINT */
+  .hint {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    font-size: 11px;
+    color: #475569;
+  }
+
+  /* AI BADGE */
+  .ai-badge {
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #a78bfa;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <span class="logo-name">Chen Lab</span>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="page-title">Evidence Map</div>
+      <div class="page-sub">Tau–neuroinflammation literature · Last synced Mar 15, 2026 via Zotero</div>
+    </div>
+  </div>
+  <span class="ai-badge">AI CLUSTERED</span>
+</div>
+
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-value">487</span>
+    <span class="stat-label">Papers in Zotero</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">127</span>
+    <span class="stat-label">In this review</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">36</span>
+    <span class="stat-label">Nodes mapped</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">6</span>
+    <span class="stat-label">Theme clusters</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value red">1</span>
+    <span class="stat-label">Evidence gap</span>
+  </div>
+  <div class="gap-stat">
+    <div class="gap-badge">
+      <div class="gap-dot"></div>
+      GAP: Tau–NLRP3 Crosstalk — blocks Aim 2
+    </div>
+  </div>
+</div>
+
+<div class="map-wrap">
+  <div id="evidence-map"></div>
+
+  <div class="legend">
+    <div class="legend-title">Clusters</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div><span class="legend-label">Tau Pathway</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0d9488"></div><span class="legend-label">Neuroinflammation</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div><span class="legend-label">APOE4 / Genetics</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span class="legend-label">CSF / PET Biomarkers</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div><span class="legend-label">Indirect / Weak evidence</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444; box-shadow: 0 0 8px #ef444488;"></div><span class="legend-label">Evidence Gap ⚠</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#475569"></div><span class="legend-label">Background</span></div>
+  </div>
+
+  <div class="hint">Scroll to zoom · Drag to pan · Hover for AI summary</div>
+</div>
+
+<script>
+const chart = echarts.init(document.getElementById('evidence-map'));
+
+const categories = [
+  { name: 'Tau Pathway',          itemStyle: { color: '#3b82f6' } },
+  { name: 'Neuroinflammation',    itemStyle: { color: '#0d9488' } },
+  { name: 'APOE4 / Genetics',     itemStyle: { color: '#8b5cf6' } },
+  { name: 'CSF / PET Biomarkers', itemStyle: { color: '#22c55e' } },
+  { name: 'Evidence Gap',         itemStyle: { color: '#ef4444' } },
+  { name: 'Indirect Evidence',    itemStyle: { color: '#f59e0b' } },
+  { name: 'Background',           itemStyle: { color: '#475569' } },
+];
+
+const nodes = [
+  // ── TAU PATHWAY HUB ──
+  {
+    id: 'hub-tau', name: 'Tau Aggregation\n& Propagation',
+    category: 0, symbolSize: 56,
+    label: { show: true, fontSize: 10, fontWeight: '700', color: '#93c5fd', formatter: 'Tau Aggregation\n& Propagation' },
+    tooltip: { author: 'Theme cluster', year: '', journal: '', summary: 'Core theme: mechanisms of tau hyperphosphorylation, fibril formation, and trans-neuronal propagation. 42 papers. Strongest evidence cluster in the map.', evidence: 'Strong', citations: 42 }
+  },
+  {
+    id: 'hub-syn', name: 'Synaptic Loss\n& Cognition',
+    category: 0, symbolSize: 36,
+    label: { show: true, fontSize: 9, color: '#93c5fd', formatter: 'Synaptic Loss' },
+    tooltip: { author: 'Theme cluster', year: '', journal: '', summary: 'Downstream consequence of tau pathology: synapse loss, dendritic retraction, and cognitive decline. 21 papers.', evidence: 'Strong', citations: 21 }
+  },
+  // ── NEUROINFLAMMATION HUB ──
+  {
+    id: 'hub-inflam', name: 'Neuroinflammation\nCascade',
+    category: 1, symbolSize: 50,
+    label: { show: true, fontSize: 10, fontWeight: '700', color: '#5eead4', formatter: 'Neuroinflammation\nCascade' },
+    tooltip: { author: 'Theme cluster', year: '', journal: '', summary: 'Microglial activation, cytokine release (IL-1β, TNF-α), and NLRP3 inflammasome signaling in AD brain. 31 papers.', evidence: 'Strong', citations: 31 }
+  },
+  {
+    id: 'hub-micro', name: 'Microglial\nActivation States',
+    category: 1, symbolSize: 34,
+    label: { show: true, fontSize: 9, color: '#5eead4', formatter: 'Microglial States' },
+    tooltip: { author: 'Theme cluster', year: '', journal: '', summary: 'DAM (disease-associated microglia) states, homeostatic-to-reactive transitions. Maya\'s snRNA-seq data maps to this cluster. 18 papers.', evidence: 'Strong', citations: 18 }
+  },
+  // ── GENETICS HUB ──
+  {
+    id: 'hub-genetics', name: 'APOE4 &\nGenetic Risk',
+    category: 2, symbolSize: 42,
+    label: { show: true, fontSize: 10, fontWeight: '700', color: '#c4b5fd', formatter: 'APOE4 &\nGenetic Risk' },
+    tooltip: { author: 'Theme cluster', year: '', journal: '', summary: 'GWAS-identified AD risk loci, APOE4 biology, and gene-environment interactions with tau pathology. 24 papers.', evidence: 'Strong', citations: 24 }
+  },
+  // ── BIOMARKER HUB ──
+  {
+    id: 'hub-bio', name: 'CSF / PET\nBiomarkers',
+    category: 3, symbolSize: 38,
+    label: { show: true, fontSize: 10, fontWeight: '700', color: '#86efac', formatter: 'CSF / PET\nBiomarkers' },
+    tooltip: { author: 'Theme cluster', year: '', journal: '', summary: 'Blood and CSF biomarkers (pTau181, pTau217, NfL) and tau PET tracers for disease staging. 17 papers.', evidence: 'Strong', citations: 17 }
+  },
+
+  // ── RED GAP NODE ──
+  {
+    id: 'gap-nlrp3',
+    name: '⚠  GAP: Tau–NLRP3\nCrosstalk',
+    category: 4, symbolSize: 62,
+    itemStyle: { color: '#ef4444', shadowColor: 'rgba(239,68,68,0.6)', shadowBlur: 20, borderColor: '#fca5a5', borderWidth: 2 },
+    label: { show: true, fontSize: 10, fontWeight: '800', color: '#fca5a5', formatter: '⚠  INSUFFICIENT\nEVIDENCE\n\nTau–NLRP3 Crosstalk' },
+    tooltip: { author: 'Evidence Gap', year: '', journal: '', summary: 'No direct in vivo evidence for NLRP3-dependent tau phosphorylation via a defined kinase. Ising 2019 shows correlation in P301S mice. Tseng 2018 uses non-NLRP3 stimuli. Direct biochemical link (GSK3β? CK1δ?) unproven. BLOCKS Aim 2 of current R01.', evidence: 'Insufficient', citations: 3 }
+  },
+
+  // ── TAU PATHWAY PAPERS ──
+  {
+    id: 'p-iqbal', name: 'Iqbal 2016\nTau pathology', category: 0, symbolSize: 20,
+    tooltip: { author: 'Iqbal et al.', year: '2016', journal: 'J Alzheimers Dis', summary: 'Comprehensive review of tau pathology mechanisms in AD. Covers hyperphosphorylation, truncation, and aggregation. Defines 6-stage Braak staging system as gold standard for tau pathology progression.', evidence: 'Strong', citations: 14 }
+  },
+  {
+    id: 'p-hanger', name: 'Hanger 2009\nTau kinases', category: 0, symbolSize: 17,
+    tooltip: { author: 'Hanger et al.', year: '2009', journal: 'Trends Mol Med', summary: 'Systematic mapping of >80 tau phosphorylation sites and their upstream kinases. GSK3β and CDK5 dominate. First paper to propose kinase-specificity of tau aggregation. Essential background for our Aim 2 kinase question.', evidence: 'Strong', citations: 11 }
+  },
+  {
+    id: 'p-clavaguera', name: 'Clavaguera 2009\nPrion-like spread', category: 0, symbolSize: 24,
+    tooltip: { author: 'Clavaguera et al.', year: '2009', journal: 'Nat Cell Biol', summary: 'First demonstration that tau pathology spreads trans-neuronally in vivo via a prion-like mechanism. Hippocampal injection of extract from tauopathy brain seeded pathology in recipient mice within 3 months. Foundational for our propagation framing in Aim 1.', evidence: 'Strong', citations: 19 }
+  },
+  {
+    id: 'p-lasagna', name: 'Lasagna-Reeves 2012\nTau oligomers', category: 0, symbolSize: 19,
+    tooltip: { author: 'Lasagna-Reeves et al.', year: '2012', journal: 'FASEB J', summary: 'Identifies tau oligomers as the primary neurotoxic species — not mature fibrils. Shows oligomers (but not monomers or fibrils) impair LTP and cause synapse loss. Shifts our target from fibrils to early aggregates. Cited explicitly in R01 Innovation section.', evidence: 'Strong', citations: 13 }
+  },
+  {
+    id: 'p-decalignon', name: 'de Calignon 2012\nEarly tau spread', category: 0, symbolSize: 24,
+    tooltip: { author: 'de Calignon et al.', year: '2012', journal: 'Neuron', summary: 'Shows tau pathology spreads from entorhinal cortex to CA1 before amyloid plaque deposition in rTg4510 model. Dissociates tau propagation from amyloid cascade. Our Preliminary Data Figure 3 directly replicates this with our model.', evidence: 'Strong', citations: 17 }
+  },
+  {
+    id: 'p-chen2023', name: 'Chen* 2023\nbioRxiv', category: 0, symbolSize: 26,
+    itemStyle: { borderColor: '#60a5fa', borderWidth: 2 },
+    tooltip: { author: 'Chen et al. [this lab]', year: '2023', journal: 'bioRxiv → J Neuroinflammation (under revision)', summary: 'Our preprint: 48h IL-1β exposure reduces tau aggregate clearance by 67–71% in primary neurons via proteasomal impairment. n=8 biological replicates (updated). Key preliminary data for Aim 1 and rationale for Aim 2. Currently under revision.', evidence: 'Moderate (preprint)', citations: 4 }
+  },
+  {
+    id: 'p-stancu', name: 'Stancu 2023\nTau seeding + inflam', category: 0, symbolSize: 22,
+    tooltip: { author: 'Stancu et al.', year: '2023', journal: 'Brain', summary: 'Shows tau seeding efficiency is increased 3.1× under neuroinflammatory conditions in primary neurons. Used LPS model. Does not isolate NLRP3-specific pathway but the inflammatory-tau interaction is convincingly shown. Read Feb 2026 — incorporated into Aim 2 rationale.', evidence: 'Moderate', citations: 8 }
+  },
+
+  // ── NEUROINFLAMMATION PAPERS ──
+  {
+    id: 'p-heneka2013', name: 'Heneka 2013\nNLRP3 in AD', category: 1, symbolSize: 28,
+    tooltip: { author: 'Heneka et al.', year: '2013', journal: 'Nature', summary: 'First demonstration of NLRP3 inflammasome activation in AD brain. NLRP3 KO APP/PS1 mice have reduced amyloid burden and cognitive improvement. Critical upstream paper but does NOT show tau-specific effects. The gap we\'re addressing begins here.', evidence: 'Strong (amyloid, not tau)', citations: 22 }
+  },
+  {
+    id: 'p-ising2019', name: 'Ising 2019\nNLRP3 → tau', category: 1, symbolSize: 30,
+    itemStyle: { borderColor: '#2dd4bf', borderWidth: 2 },
+    tooltip: { author: 'Ising et al.', year: '2019', journal: 'Nat Neurosci', summary: 'NLRP3 deficiency reduces tau phosphorylation in P301S mice — first in vivo evidence linking NLRP3 to tau. Mechanism not shown (could be indirect via IL-1β → GSK3β or via microglial IL-18). This is the closest existing evidence. Reviewer 3 correctly identified this as correlative only.', evidence: 'Moderate (correlative)', citations: 16 }
+  },
+  {
+    id: 'p-heppner', name: 'Heppner 2015\nImmune attack', category: 1, symbolSize: 22,
+    tooltip: { author: 'Heppner et al.', year: '2015', journal: 'Nat Rev Neurosci', summary: 'Comprehensive review of immune mechanisms in neurodegeneration. Microglia-neuron crosstalk, complement activation, and adaptive immunity in AD. Framework paper used in our Significance section to justify the neuroinflammatory context.', evidence: 'Strong (review)', citations: 15 }
+  },
+  {
+    id: 'p-mosher', name: 'Mosher 2014\nMicroglia aging', category: 1, symbolSize: 18,
+    tooltip: { author: 'Mosher & Bhatt', year: '2014', journal: 'J Neuroinflammation', summary: 'Shows microglial function deteriorates with age and AD pathology load. Age-dependent impairment in phagocytic clearance parallels tau accumulation timeline. Context for why inflammatory state matters for clearance capacity.', evidence: 'Moderate', citations: 9 }
+  },
+  {
+    id: 'p-liddelow', name: 'Liddelow 2017\nA1 astrocytes', category: 1, symbolSize: 19,
+    tooltip: { author: 'Liddelow et al.', year: '2017', journal: 'Nature', summary: 'Identifies A1 (neurotoxic) astrocyte state induced by activated microglia via IL-1α, TNF, C1q. A1 astrocytes lose supportive function and become toxic to neurons. Relevant context for how the tau-inflammation interaction propagates beyond neurons.', evidence: 'Strong', citations: 12 }
+  },
+
+  // ── GENETICS PAPERS ──
+  {
+    id: 'p-lambert', name: 'Lambert 2013\nGWAS AD', category: 2, symbolSize: 24,
+    tooltip: { author: 'Lambert et al.', year: '2013', journal: 'Nat Genet', summary: 'Largest GWAS for late-onset AD at time of publication. Identifies BIN1, CLU, CR1, PICALM as top risk loci beyond APOE. Several hits (BIN1, CLU) converge on tau biology. Cited in our Significance section to justify genetic relevance.', evidence: 'Strong', citations: 18 }
+  },
+  {
+    id: 'p-holtzman', name: 'Holtzman 2012\nAPOE & amyloid', category: 2, symbolSize: 22,
+    tooltip: { author: 'Holtzman et al.', year: '2012', journal: 'Neuron', summary: 'APOE4 impairs Aβ clearance and accelerates plaque deposition. Also shows preliminary evidence for APOE4-tau interactions in mouse models. Used to frame why genetic background matters for our iPSC line selection (Tanaka\'s APOE4 lines).', evidence: 'Strong', citations: 14 }
+  },
+  {
+    id: 'p-corder', name: 'Corder 1993\nAPOE4 risk', category: 2, symbolSize: 18,
+    tooltip: { author: 'Corder et al.', year: '1993', journal: 'Science', summary: 'Seminal paper establishing APOE4 allele as the strongest genetic risk factor for late-onset AD. Dose-dependent relationship (1 allele = 3× risk, 2 alleles = 15× risk). Historical context citation in our Significance introduction.', evidence: 'Strong', citations: 10 }
+  },
+
+  // ── BIOMARKER PAPERS ──
+  {
+    id: 'p-jack', name: 'Jack 2018\nAT(N) framework', category: 3, symbolSize: 28,
+    tooltip: { author: 'Jack et al.', year: '2018', journal: "Alzheimer's & Dementia", summary: 'NIA-AA research framework defining AD biologically via amyloid (A), tau (T), and neurodegeneration (N) biomarkers. Universally cited by review panels. Our work sits in the T(+) space — justifies measuring tau-specific outcomes independent of amyloid status.', evidence: 'Strong (consensus)', citations: 20 }
+  },
+  {
+    id: 'p-blennow', name: 'Blennow 2015\nCSF tau', category: 3, symbolSize: 20,
+    tooltip: { author: 'Blennow et al.', year: '2015', journal: 'Nat Rev Neurol', summary: 'Clinical validation of CSF pTau181/Aβ42 ratio as early AD diagnostic marker. Shows CSF pTau changes precede cognitive symptoms by 10+ years. Translational context for why mechanistic understanding of tau phosphorylation has clinical impact.', evidence: 'Strong', citations: 13 }
+  },
+  {
+    id: 'p-ossenkoppele', name: 'Ossenkoppele 2016\nTau PET', category: 3, symbolSize: 22,
+    tooltip: { author: 'Ossenkoppele et al.', year: '2016', journal: 'JAMA', summary: 'First large-scale tau PET study showing AV1451 uptake pattern matches Braak staging. Tau PET is more closely linked to cognitive performance than amyloid PET. Validates tau as the primary therapeutic target. Strong context for Significance.', evidence: 'Strong', citations: 15 }
+  },
+
+  // ── INDIRECT / WEAK EVIDENCE (near GAP) ──
+  {
+    id: 'p-tseng', name: 'Tseng 2018\nInflam→tau (indirect)', category: 5, symbolSize: 17,
+    tooltip: { author: 'Tseng et al.', year: '2018', journal: 'J Neuroinflammation', summary: 'LPS-induced neuroinflammation increases insoluble tau fraction in wild-type mice. Uses IL-6 as endpoint, not NLRP3 agonist specifically. Does not show direct kinase mechanism. Reviewer 3 noted this is not NLRP3-specific and cannot substitute for direct evidence.', evidence: 'Weak (indirect)', citations: 5 }
+  },
+  {
+    id: 'p-liu2021', name: 'Liu 2021\nNLRP3 in vitro', category: 5, symbolSize: 16,
+    tooltip: { author: 'Liu et al.', year: '2021', journal: 'Front Aging Neurosci', summary: 'In vitro study showing NLRP3 activation in microglia conditioned medium causes tau hyperphosphorylation in co-cultured neurons. N=3, single timepoint. Paracrine mechanism (via secreted IL-1β or IL-18). Does not show cell-autonomous tau effect. Indirect but suggestive.', evidence: 'Weak (in vitro, n=3)', citations: 3 }
+  },
+  {
+    id: 'p-venegas', name: 'Venegas 2017\nASC cross-seeding', category: 5, symbolSize: 18,
+    tooltip: { author: 'Venegas et al.', year: '2017', journal: 'Nature', summary: 'Shows ASC specks (downstream NLRP3 product) can cross-seed amyloid-β aggregation — a precedent for inflammasome products seeding protein aggregation. By analogy, supports plausibility of NLRP3→tau seeding. Analogy only; needs direct tau validation.', evidence: 'Weak (analogy)', citations: 7 }
+  },
+
+  // ── BACKGROUND ──
+  {
+    id: 'p-selkoe', name: 'Selkoe 2016\nAmyloid hypothesis', category: 6, symbolSize: 22,
+    tooltip: { author: 'Selkoe & Hardy', year: '2016', journal: 'EMBO J', summary: 'Updated amyloid cascade hypothesis at 25 years. Reviews evidence for and against Aβ primacy in AD. Our work is framed as complementary — tau as the effector molecule of amyloid toxicity. Cited in Significance to justify tau-focused mechanistic work.', evidence: 'Strong (historical)', citations: 11 }
+  },
+  {
+    id: 'p-querfurth', name: 'Querfurth 2010\nAD review', category: 6, symbolSize: 18,
+    tooltip: { author: 'Querfurth & LaFerla', year: '2010', journal: 'NEJM', summary: 'Classic NEJM review of AD pathophysiology. Covers amyloid, tau, genetics, and potential therapeutic targets. Useful for Introduction framing and for explaining the disease context to non-specialist reviewers.', evidence: 'Review', citations: 9 }
+  },
+];
+
+const edges = [
+  // Hub-hub connections
+  { source: 'hub-tau', target: 'hub-syn', lineStyle: { width: 2 } },
+  { source: 'hub-tau', target: 'gap-nlrp3', lineStyle: { width: 2, color: '#ef4444', opacity: 0.5 } },
+  { source: 'hub-inflam', target: 'hub-micro', lineStyle: { width: 2 } },
+  { source: 'hub-inflam', target: 'gap-nlrp3', lineStyle: { width: 2.5, color: '#ef4444', opacity: 0.6 } },
+  { source: 'hub-genetics', target: 'hub-tau' },
+  { source: 'hub-genetics', target: 'hub-inflam' },
+  { source: 'hub-bio', target: 'hub-tau' },
+  { source: 'hub-bio', target: 'hub-inflam' },
+  { source: 'hub-tau', target: 'hub-inflam', lineStyle: { type: 'dashed', opacity: 0.4 } },
+
+  // Tau cluster papers
+  { source: 'p-iqbal', target: 'hub-tau' },
+  { source: 'p-hanger', target: 'hub-tau' },
+  { source: 'p-hanger', target: 'gap-nlrp3', lineStyle: { opacity: 0.25 } },
+  { source: 'p-clavaguera', target: 'hub-tau' },
+  { source: 'p-lasagna', target: 'hub-tau' },
+  { source: 'p-lasagna', target: 'hub-syn' },
+  { source: 'p-decalignon', target: 'hub-tau' },
+  { source: 'p-decalignon', target: 'hub-syn' },
+  { source: 'p-chen2023', target: 'hub-tau' },
+  { source: 'p-chen2023', target: 'hub-inflam' },
+  { source: 'p-chen2023', target: 'gap-nlrp3', lineStyle: { color: '#ef4444', opacity: 0.4 } },
+  { source: 'p-stancu', target: 'hub-tau' },
+  { source: 'p-stancu', target: 'hub-inflam' },
+
+  // Neuroinflammation papers
+  { source: 'p-heneka2013', target: 'hub-inflam' },
+  { source: 'p-heneka2013', target: 'gap-nlrp3', lineStyle: { color: '#f59e0b', opacity: 0.5 } },
+  { source: 'p-ising2019', target: 'hub-inflam' },
+  { source: 'p-ising2019', target: 'hub-tau' },
+  { source: 'p-ising2019', target: 'gap-nlrp3', lineStyle: { color: '#f59e0b', width: 2, opacity: 0.7 } },
+  { source: 'p-heppner', target: 'hub-inflam' },
+  { source: 'p-mosher', target: 'hub-inflam' },
+  { source: 'p-mosher', target: 'hub-micro' },
+  { source: 'p-liddelow', target: 'hub-micro' },
+  { source: 'p-liddelow', target: 'hub-inflam' },
+
+  // Genetics papers
+  { source: 'p-lambert', target: 'hub-genetics' },
+  { source: 'p-holtzman', target: 'hub-genetics' },
+  { source: 'p-holtzman', target: 'hub-tau' },
+  { source: 'p-corder', target: 'hub-genetics' },
+
+  // Biomarker papers
+  { source: 'p-jack', target: 'hub-bio' },
+  { source: 'p-blennow', target: 'hub-bio' },
+  { source: 'p-ossenkoppele', target: 'hub-bio' },
+  { source: 'p-ossenkoppele', target: 'hub-tau' },
+
+  // Indirect/weak evidence papers → gap
+  { source: 'p-tseng', target: 'gap-nlrp3', lineStyle: { type: 'dashed', opacity: 0.5 } },
+  { source: 'p-tseng', target: 'hub-inflam' },
+  { source: 'p-liu2021', target: 'gap-nlrp3', lineStyle: { type: 'dashed', opacity: 0.5 } },
+  { source: 'p-liu2021', target: 'hub-micro' },
+  { source: 'p-venegas', target: 'gap-nlrp3', lineStyle: { type: 'dashed', opacity: 0.4 } },
+  { source: 'p-venegas', target: 'hub-inflam' },
+
+  // Background papers
+  { source: 'p-selkoe', target: 'hub-tau' },
+  { source: 'p-querfurth', target: 'hub-bio' },
+  { source: 'p-querfurth', target: 'hub-tau' },
+];
+
+const option = {
+  backgroundColor: 'transparent',
+  tooltip: {
+    trigger: 'item',
+    backgroundColor: 'rgba(11, 18, 32, 0.96)',
+    borderColor: '#1e2d45',
+    borderWidth: 1,
+    padding: [12, 16],
+    textStyle: { color: '#e2e8f0', fontSize: 12 },
+    formatter: (params) => {
+      if (params.dataType !== 'node') return '';
+      const d = params.data;
+      if (!d.tooltip) return `<b>${d.name}</b>`;
+      const t = d.tooltip;
+      const evidenceColor = {
+        'Strong': '#22c55e', 'Moderate': '#f59e0b',
+        'Weak (indirect)': '#f97316', 'Weak (in vitro, n=3)': '#f97316',
+        'Weak (analogy)': '#f97316', 'Insufficient': '#ef4444',
+        'Moderate (correlative)': '#f59e0b', 'Moderate (preprint)': '#f59e0b',
+        'Strong (amyloid, not tau)': '#22c55e',
+        'Strong (historical)': '#64748b', 'Review': '#64748b',
+        'Strong (review)': '#22c55e', 'Strong (consensus)': '#22c55e',
+      }[t.evidence] || '#94a3b8';
+
+      const header = t.year
+        ? `<div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:6px">${t.author} <span style="color:#64748b">${t.year}</span></div><div style="font-size:10px;color:#64748b;margin-bottom:10px;font-style:italic">${t.journal}</div>`
+        : `<div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:10px">${t.author}</div>`;
+
+      return `
+        ${header}
+        <div style="font-size:11px;color:#94a3b8;line-height:1.7;margin-bottom:10px;max-width:280px">${t.summary}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #1e2d45">
+          <span style="font-size:10px;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;color:${evidenceColor};font-weight:600">
+            ${t.evidence}
+          </span>
+          <span style="font-size:10px;color:#475569">${t.citations} refs in review</span>
+        </div>
+      `;
+    }
+  },
+  series: [{
+    type: 'graph',
+    layout: 'force',
+    data: nodes,
+    links: edges,
+    categories: categories,
+    roam: true,
+    draggable: true,
+    focusNodeAdjacency: true,
+    force: {
+      repulsion: 320,
+      edgeLength: [80, 200],
+      gravity: 0.06,
+      friction: 0.6,
+    },
+    itemStyle: {
+      borderWidth: 0,
+    },
+    lineStyle: {
+      opacity: 0.22,
+      width: 1,
+      curveness: 0.1,
+      color: '#94a3b8',
+    },
+    emphasis: {
+      focus: 'adjacency',
+      lineStyle: { width: 2, opacity: 0.7 },
+      itemStyle: { shadowBlur: 10, shadowColor: 'rgba(255,255,255,0.3)' },
+    },
+    label: {
+      show: false,
+      color: '#94a3b8',
+      fontSize: 9,
+    },
+    edgeSymbol: ['none', 'none'],
+    animation: true,
+    animationDuration: 1000,
+  }]
+};
+
+chart.setOption(option);
+window.addEventListener('resize', () => chart.resize());
+</script>
+</body>
+</html>

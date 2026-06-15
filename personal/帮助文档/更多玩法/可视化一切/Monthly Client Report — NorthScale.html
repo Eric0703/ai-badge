@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>February 2025 Performance Report — NorthScale</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#F5F3FF; --white:#ffffff; --dark:#1E1B4B; --border:#E5E7EB; --muted:#6B7280; --primary:#7C3AED; --primary-light:#EDE9FE; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--dark); font-family:'Inter',sans-serif; }
+.dm { font-family:'DM Sans',sans-serif; }
+.page { max-width:900px; margin:0 auto; padding:48px 40px; }
+.badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.badge-green { background:#ECFDF5; color:#059669; }
+.badge-amber { background:#FFFBEB; color:#D97706; }
+.badge-red { background:#FEE2E2; color:#DC2626; }
+.section-title { font-family:'DM Sans',sans-serif; font-size:18px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:10px; color:var(--dark); }
+.card { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:20px; }
+.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:32px; }
+.kpi { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:18px; }
+.win-item { display:flex; gap:12px; align-items:flex-start; padding:12px; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; }
+.issue-item { display:flex; gap:12px; align-items:flex-start; padding:12px; background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; }
+.action-item { display:flex; gap:12px; align-items:flex-start; padding:12px; background:var(--primary-light); border:1px solid #C4B5FD; border-radius:10px; }
+table { width:100%; border-collapse:collapse; }
+th { text-align:left; padding:10px 14px; font-size:11px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+td { padding:11px 14px; font-size:13px; border-bottom:1px solid var(--border); color:var(--dark); }
+tr:last-child td { border-bottom:none; }
+.divider { border:none; border-top:1px solid var(--border); margin:40px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Report Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border);">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#7C3AED,#06B6D4);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <iconify-icon icon="lucide:zap" style="color:white;font-size:16px;"></iconify-icon>
+        </div>
+        <div class="dm" style="font-weight:600;font-size:15px;color:var(--dark);">Apex & Co.</div>
+      </div>
+      <h1 class="dm" style="font-size:32px;font-weight:700;margin-bottom:6px;">February 2025<br>Performance Report</h1>
+      <p style="color:var(--muted);font-size:15px;line-height:1.6;">Prepared for <strong style="color:var(--dark);">NorthScale</strong> · Confidential<br>Account Manager: Jordan Lee · jordan@apexandco.com</p>
+    </div>
+    <div style="text-align:right;">
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 20px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Report Period</div>
+        <div class="dm" style="font-size:16px;font-weight:700;">Feb 1 – Feb 28, 2025</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Client Tier</div>
+          <span class="badge badge-amber">Tier 2 Scale Retainer</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Contract Renewal</div>
+          <div style="font-size:13px;font-weight:600;color:#D97706;">April 30, 2025 ⚠</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <div style="margin-bottom:40px;">
+    <div class="section-title"><iconify-icon icon="lucide:layout-list" style="color:#7C3AED;"></iconify-icon> Executive Summary</div>
+    <div class="card">
+      <p style="font-size:13px;line-height:1.8;color:var(--dark);margin-bottom:16px;">February was a solid month for NorthScale's demand generation, with MQL volume growing <strong>22% quarter-over-quarter</strong> driven by our expanded content SEO program and improved Google Ads targeting. Our organic content strategy is gaining traction — 3 new blog posts achieved page-1 rankings within 60 days of publish.</p>
+      <p style="font-size:13px;line-height:1.8;color:var(--dark);margin-bottom:16px;">However, the SQL conversion rate remained flat at 18%, which we're investigating with your sales team. This is the primary focus area heading into March, as we believe tighter MQL qualification criteria will improve downstream conversion efficiency.</p>
+      <p style="font-size:13px;line-height:1.8;color:var(--dark);">Looking ahead to April's contract renewal — we're preparing a Q1 retrospective and Q2 growth roadmap to present at our March 15 QBR.</p>
+    </div>
+  </div>
+
+  <!-- KPI Scorecard -->
+  <div style="margin-bottom:40px;">
+    <div class="section-title"><iconify-icon icon="lucide:target" style="color:#7C3AED;"></iconify-icon> KPI Scorecard</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Monthly Qualified Leads (MQLs)</div>
+        <div class="dm" style="font-size:30px;font-weight:700;margin-bottom:4px;">284</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span class="badge badge-green"><iconify-icon icon="lucide:trending-up" style="font-size:10px;"></iconify-icon> +22%</span>
+          <span style="font-size:11px;color:var(--muted);">QoQ</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">Target: 250 · <span style="color:#059669;font-weight:600;">✓ Exceeded</span></div>
+      </div>
+      <div class="kpi">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Sales Qualified Leads (SQLs)</div>
+        <div class="dm" style="font-size:30px;font-weight:700;margin-bottom:4px;">51</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span class="badge badge-amber">18% conv.</span>
+          <span style="font-size:11px;color:var(--muted);">MQL→SQL</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">Target: 55 · <span style="color:#D97706;font-weight:600;">⚠ Missed by 7%</span></div>
+      </div>
+      <div class="kpi">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Demo Requests</div>
+        <div class="dm" style="font-size:30px;font-weight:700;margin-bottom:4px;">34</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span class="badge badge-green"><iconify-icon icon="lucide:trending-up" style="font-size:10px;"></iconify-icon> +15%</span>
+          <span style="font-size:11px;color:var(--muted);">vs Jan</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">Target: 30 · <span style="color:#059669;font-weight:600;">✓ Exceeded</span></div>
+      </div>
+      <div class="kpi">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Organic Traffic</div>
+        <div class="dm" style="font-size:30px;font-weight:700;margin-bottom:4px;">42.6K</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span class="badge badge-green"><iconify-icon icon="lucide:trending-up" style="font-size:10px;"></iconify-icon> +38%</span>
+          <span style="font-size:11px;color:var(--muted);">YoY</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">Target: 40K · <span style="color:#059669;font-weight:600;">✓ Exceeded</span></div>
+      </div>
+      <div class="kpi">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Cost Per MQL</div>
+        <div class="dm" style="font-size:30px;font-weight:700;margin-bottom:4px;">$194</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span class="badge badge-green"><iconify-icon icon="lucide:trending-down" style="font-size:10px;"></iconify-icon> −12%</span>
+          <span style="font-size:11px;color:var(--muted);">vs Jan</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">Target: &lt;$220 · <span style="color:#059669;font-weight:600;">✓ On track</span></div>
+      </div>
+      <div class="kpi">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Overall ROAS</div>
+        <div class="dm" style="font-size:30px;font-weight:700;margin-bottom:4px;">3.9×</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span class="badge badge-amber">= Jan</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">Target: 4.0× · <span style="color:#D97706;font-weight:600;">⚠ Just below</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px;">
+    <div class="card">
+      <div class="dm" style="font-weight:600;font-size:15px;margin-bottom:4px;">MQL Trend</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Monthly qualified leads · Last 6 months</div>
+      <div id="mqlChart" style="height:180px;"></div>
+    </div>
+    <div class="card">
+      <div class="dm" style="font-weight:600;font-size:15px;margin-bottom:4px;">Channel Contribution</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">MQLs by source · February</div>
+      <div id="channelChart" style="height:180px;"></div>
+    </div>
+  </div>
+
+  <!-- Channel Breakdown -->
+  <div style="margin-bottom:40px;">
+    <div class="section-title"><iconify-icon icon="lucide:bar-chart-2" style="color:#7C3AED;"></iconify-icon> Channel Breakdown</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Channel</th><th style="text-align:right;">Spend</th><th style="text-align:right;">Impressions</th><th style="text-align:right;">Clicks</th><th style="text-align:right;">MQLs</th><th style="text-align:right;">CPL</th><th>vs Target</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600;">Google Ads</td><td style="text-align:right;">$18,400</td><td style="text-align:right;">284K</td><td style="text-align:right;">4,820</td><td style="text-align:right;font-weight:600;">142</td><td style="text-align:right;">$130</td><td><span class="badge badge-green">✓ +18%</span></td></tr>
+          <tr><td style="font-weight:600;">LinkedIn Ads</td><td style="text-align:right;">$14,200</td><td style="text-align:right;">118K</td><td style="text-align:right;">1,240</td><td style="text-align:right;font-weight:600;">78</td><td style="text-align:right;">$182</td><td><span class="badge badge-green">✓ +8%</span></td></tr>
+          <tr><td style="font-weight:600;">Organic SEO</td><td style="text-align:right;">$8,000</td><td style="text-align:right;">42.6K visits</td><td style="text-align:right;">—</td><td style="text-align:right;font-weight:600;">44</td><td style="text-align:right;">$182</td><td><span class="badge badge-green">✓ +38%</span></td></tr>
+          <tr><td style="font-weight:600;">Email Nurture</td><td style="text-align:right;">$2,000</td><td style="text-align:right;">24K sends</td><td style="text-align:right;">1,680</td><td style="text-align:right;font-weight:600;">20</td><td style="text-align:right;">$100</td><td><span class="badge badge-amber">⚠ Flat</span></td></tr>
+          <tr style="background:#F9FAFB;"><td style="font-weight:700;">Total</td><td style="text-align:right;font-weight:700;">$42,600</td><td style="text-align:right;font-weight:700;">—</td><td style="text-align:right;font-weight:700;">—</td><td style="text-align:right;font-weight:700;">284</td><td style="text-align:right;font-weight:700;">$150</td><td><span class="badge badge-green">✓ Above</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Wins & Issues -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px;">
+    <div>
+      <div class="section-title"><iconify-icon icon="lucide:trophy" style="color:#059669;"></iconify-icon> Top 3 Wins</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="win-item">
+          <iconify-icon icon="lucide:check-circle" style="color:#059669;flex-shrink:0;margin-top:2px;"></iconify-icon>
+          <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>MQL record broken.</strong> 284 MQLs is an all-time monthly high, driven by a 40% increase in Google Ads quality score and 3 new blog articles ranking page 1.</div>
+        </div>
+        <div class="win-item">
+          <iconify-icon icon="lucide:check-circle" style="color:#059669;flex-shrink:0;margin-top:2px;"></iconify-icon>
+          <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>Cost Per MQL down 12%.</strong> Audience segmentation improvements reduced waste spend on non-ICP traffic. CPM dropped $8 on LinkedIn.</div>
+        </div>
+        <div class="win-item">
+          <iconify-icon icon="lucide:check-circle" style="color:#059669;flex-shrink:0;margin-top:2px;"></iconify-icon>
+          <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>SEO momentum building.</strong> "B2B workflow automation" reached position 5 (was 12 in November), driving 44 organic MQLs — up from 0 six months ago.</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title"><iconify-icon icon="lucide:alert-triangle" style="color:#DC2626;"></iconify-icon> Top 3 Issues</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="issue-item">
+          <iconify-icon icon="lucide:x-circle" style="color:#DC2626;flex-shrink:0;margin-top:2px;"></iconify-icon>
+          <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>SQL conversion rate flat at 18%.</strong> Despite MQL growth, the volume of sales-accepted leads has not grown proportionally. Root cause: possible MQL qualification drift — working with your sales team on criteria alignment.</div>
+        </div>
+        <div class="issue-item">
+          <iconify-icon icon="lucide:x-circle" style="color:#DC2626;flex-shrink:0;margin-top:2px;"></iconify-icon>
+          <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>Email nurture engagement declining.</strong> Open rates dropped from 28% to 22% in February. Likely list fatigue. Recommend a list hygiene pass and sequence refresh in Q2.</div>
+        </div>
+        <div class="issue-item">
+          <iconify-icon icon="lucide:x-circle" style="color:#DC2626;flex-shrink:0;margin-top:2px;"></iconify-icon>
+          <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>LinkedIn CPC increased 18% vs Jan.</strong> Platform-wide CPC inflation in B2B tech vertical. Testing new ad formats (thought leader ads) to counteract. Early results promising.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- March Priorities -->
+  <div style="margin-bottom:48px;">
+    <div class="section-title"><iconify-icon icon="lucide:arrow-right-circle" style="color:#7C3AED;"></iconify-icon> March Priorities</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="action-item">
+        <iconify-icon icon="lucide:flag" style="color:#7C3AED;flex-shrink:0;margin-top:2px;"></iconify-icon>
+        <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>MQL scoring alignment session</strong> with your sales ops team (week of Mar 17). Goal: tighten ICP definition to improve SQL conversion rate from 18% → 25% by April.</div>
+      </div>
+      <div class="action-item">
+        <iconify-icon icon="lucide:flag" style="color:#7C3AED;flex-shrink:0;margin-top:2px;"></iconify-icon>
+        <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>Launch LinkedIn Thought Leader Ads</strong> featuring your CEO. Early tests show 40% lower CPL vs standard sponsored content. Full rollout budget: $4K in March.</div>
+      </div>
+      <div class="action-item">
+        <iconify-icon icon="lucide:flag" style="color:#7C3AED;flex-shrink:0;margin-top:2px;"></iconify-icon>
+        <div style="font-size:13px;line-height:1.8;color:var(--dark);"><strong>Q1 retrospective + Q2 roadmap</strong> deck ready for Mar 15 QBR. We'll present a renewed strategy with expanded channel coverage for Q2 and renewal options.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="padding-top:32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div class="dm" style="font-weight:700;font-size:16px;">Apex & Co.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">jordan@apexandco.com · apexandco.com</div>
+    </div>
+    <div style="text-align:right;font-size:12px;color:var(--muted);">
+      <div>February 2025 · NorthScale · Confidential</div>
+      <div style="margin-top:2px;">Distributed to: Alex Reyes (CEO), Dana Park (VP Marketing)</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const mqlChart = echarts.init(document.getElementById('mqlChart'));
+mqlChart.setOption({
+  backgroundColor: 'transparent',
+  grid: { top:10, right:10, bottom:30, left:40 },
+  xAxis: { type:'category', data:['Sep','Oct','Nov','Dec','Jan','Feb'], axisLine:{ lineStyle:{ color:'#E5E7EB' } }, axisLabel:{ color:'#9CA3AF', fontSize:11 }, axisTick:{ show:false } },
+  yAxis: { type:'value', axisLabel:{ color:'#9CA3AF', fontSize:11 }, splitLine:{ lineStyle:{ color:'#F3F4F6' } }, axisLine:{ show:false }, axisTick:{ show:false } },
+  series: [{ type:'bar', data:[168,178,196,188,233,284], itemStyle:{ color:{ type:'linear', x:0, y:0, x2:0, y2:1, colorStops:[{ offset:0, color:'#7C3AED' },{ offset:1, color:'#C4B5FD' }] }, borderRadius:[4,4,0,0] } }],
+  tooltip: { trigger:'axis', backgroundColor:'#ffffff', borderColor:'#E5E7EB', textStyle:{ color:'#1E1B4B', fontSize:12 } }
+});
+
+const channelChart = echarts.init(document.getElementById('channelChart'));
+channelChart.setOption({
+  backgroundColor: 'transparent',
+  series: [{ type:'pie', radius:['50%','75%'], center:['50%','50%'],
+    data:[
+      { value:142, name:'Google Ads', itemStyle:{ color:'#7C3AED' } },
+      { value:78, name:'LinkedIn', itemStyle:{ color:'#06B6D4' } },
+      { value:44, name:'Organic SEO', itemStyle:{ color:'#10B981' } },
+      { value:20, name:'Email', itemStyle:{ color:'#F59E0B' } }
+    ], label:{ show:false }, emphasis:{ scale:false }
+  }],
+  legend: { bottom:0, textStyle:{ color:'#6B7280', fontSize:11 }, itemWidth:10, itemHeight:10 },
+  tooltip: { trigger:'item', backgroundColor:'#ffffff', borderColor:'#E5E7EB', textStyle:{ color:'#1E1B4B', fontSize:12 }, formatter:'{b}: {c} MQLs ({d}%)' }
+});
+</script>
+</body>
+</html>
