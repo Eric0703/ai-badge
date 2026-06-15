@@ -143,6 +143,7 @@ ai-badge/
 - 状态变更集中在 service/orchestrator，走合法状态机转换
 - agent handler 统一用传入 session，不内部新开 `async_session_factory`
 - 测试：TRUNCATE 隔离模型，HTTP 与 db fixture 独立 connection，Mock provider 优先
+- **本地 mock 通过 ≠ 真实 DB / 真实 provider 通过**：CI 全绿是必要条件非充分条件，上生产前必须在贴近生产的环境（UTF8 DB + 真实 provider + 真实存储）跑端到端 smoke test
 - PolicyViolation 统一映射 HTTP 状态，不吞异常
 
 **Phase 2 待拆解 Ticket（开发包 1B-1~1B-5）**：

@@ -338,6 +338,24 @@ ai-badge/
 
 ## 测试
 
+> ⚠️ **测试有效性边界：本地 mock 通过 ≠ 真实 DB / 真实 provider 通过**
+>
+> 测试默认用 **Mock Provider**（不调真实 Whisper/LLM）跑通业务链路。这能验证状态机、
+> 编排、权限、审计等逻辑，但**不能**证明以下几类问题已解决：
+>
+> 1. **真实 LLM/Whisper provider**：mock 返回固定结构化输出；真实 API 的延迟、限流、
+>    JSON schema 偏差、错误处理都未被覆盖。接真实 Key 后必须单独做 smoke test。
+> 2. **数据库编码 / 约束**：测试库**必须是 UTF8**。曾遇到 `SQL_ASCII` 库导致中文 JSONB
+>    写入失败——mock 链路在 UTF8 下全绿，换库后才暴露。生产/CI 的 DB 编码、collation、
+>    FK/NOT NULL/UNIQUE 约束需与 migration 完全一致。
+> 3. **连接 / 事务语义**：测试用 function-scoped engine + TRUNCATE 隔离，HTTP 与 db fixture
+>    各自独立 connection。真实 Worker 的并发轮询、`FOR UPDATE SKIP LOCKED`、心跳超时
+>    在单测里只能部分模拟。
+> 4. **存储 / 外部集成**：local filesystem stub、飞书 stub 都不代表 MinIO/S3、真实飞书 API。
+>
+> **结论**：CI 全绿是必要条件，不是充分条件。上生产前必须在贴近生产的环境
+> （UTF8 DB + 真实 provider + 真实存储）跑一轮端到端 smoke test。
+
 ### Mock Provider 规则
 
 所有测试使用 **Mock Provider**，不调真实 API：
