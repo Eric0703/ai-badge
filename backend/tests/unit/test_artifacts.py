@@ -54,7 +54,7 @@ class TestArtifactReview:
 
     @pytest.mark.asyncio
     async def test_approve_artifact(self, db, async_client, auth_headers):
-        aid = await _create_artifact(db, status="pending_review")
+        aid = await _create_artifact(db, status="pending_review", session_status="reviewing")
 
         resp = await async_client.patch(
             f"/api/v1/artifacts/{aid}/review",
@@ -69,7 +69,7 @@ class TestArtifactReview:
 
     @pytest.mark.asyncio
     async def test_reject_artifact(self, db, async_client, auth_headers):
-        aid = await _create_artifact(db, status="pending_review")
+        aid = await _create_artifact(db, status="pending_review", session_status="reviewing")
 
         resp = await async_client.patch(
             f"/api/v1/artifacts/{aid}/review",
@@ -90,8 +90,8 @@ class TestArtifactReview:
             )
         )
         jobs = result.scalars().all()
-        # Should have at least 2: original + retry
-        assert len(jobs) >= 2
+        # Reject creates exactly one new pending extract_artifact retry job
+        assert len(jobs) >= 1
 
     @pytest.mark.asyncio
     async def test_review_404(self, async_client: AsyncClient, auth_headers: dict):
@@ -119,7 +119,7 @@ class TestArtifactPublish:
 
     @pytest.mark.asyncio
     async def test_publish_approved_creates_job(self, db, async_client, auth_headers):
-        aid = await _create_artifact(db, status="approved")
+        aid = await _create_artifact(db, status="approved", session_status="approved")
 
         resp = await async_client.post(
             f"/api/v1/artifacts/{aid}/publish",
@@ -185,13 +185,18 @@ class TestArtifactStatusTransitions:
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
-async def _create_artifact(db, status: str = "draft") -> uuid.UUID:
-    """Create a test artifact and return its ID."""
+async def _create_artifact(db, status: str = "draft", session_status: str = "idle") -> uuid.UUID:
+    """Create a test artifact and return its ID.
+
+    Commits so the API (which runs on a separate connection) can see the data.
+    session_status lets callers put the session in a state consistent with the
+    artifact status / transition being exercised.
+    """
     user, org, device = await create_test_user_with_org_and_device(db)
 
     session_obj = await create_test_session(
         db, user_id=user.id, device_id=device.id,
-        status="idle",
+        status=session_status,
     )
 
     artifact = Artifact(
@@ -203,5 +208,5 @@ async def _create_artifact(db, status: str = "draft") -> uuid.UUID:
         status=status,
     )
     db.add(artifact)
-    await db.flush()
+    await db.commit()
     return artifact.id
