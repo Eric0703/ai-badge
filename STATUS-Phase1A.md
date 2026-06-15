@@ -143,8 +143,17 @@ ai-badge/
 - 状态变更集中在 service/orchestrator，走合法状态机转换
 - agent handler 统一用传入 session，不内部新开 `async_session_factory`
 - 测试：TRUNCATE 隔离模型，HTTP 与 db fixture 独立 connection，Mock provider 优先
-- **本地 mock 通过 ≠ 真实 DB / 真实 provider 通过**：CI 全绿是必要条件非充分条件，上生产前必须在贴近生产的环境（UTF8 DB + 真实 provider + 真实存储）跑端到端 smoke test
 - PolicyViolation 统一映射 HTTP 状态，不吞异常
+- 发布门禁：遵守下方「测试与发布规范」
+
+### 测试与发布规范（强制，Phase 2 及之后长期约束）
+
+1. **CI 全绿是进入下一阶段的必要条件，但不是生产可用的充分条件。**
+2. **每个 Phase 冻结前，必须至少通过一次真实 PostgreSQL 环境下的全量测试：** `alembic upgrade head` + `pytest tests/ -v`。
+3. **上生产或接入真实客户数据前，必须在贴近生产的环境跑端到端 smoke test，至少覆盖：** UTF8 PostgreSQL / 真实 LLM · Whisper provider（或企业指定 provider）/ 真实文件·音频存储 / 真实配置项和环境变量。
+4. **如果测试只在 mock provider 或沙箱环境通过，状态只能标记为「开发完成 / 待真实环境验证」，不能标记为「生产就绪」。**
+
+> 背景：Phase 1A 曾遇 `SQL_ASCII` 库导致中文 JSONB 写入失败，mock 链路在 UTF8 下全绿、换库后才暴露。本规范同步写入 Core Memory `project_ai_badge.md`。
 
 **Phase 2 待拆解 Ticket（开发包 1B-1~1B-5）**：
 | # | 模块 | 依赖 |
